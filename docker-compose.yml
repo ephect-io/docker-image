@@ -1,0 +1,10 @@
+version: "3.0"
+services:
+  ephect:
+    build: ./docker
+    image: cpascher:latest
+    ports:
+     - '8223:443'
+     - '8222:8888'
+    volumes:
+     - .:/Sites
