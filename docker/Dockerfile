@@ -20,18 +20,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && sed -i -e "s/Listen 80/Listen 80\\nListen 8080/g" /etc/apache2/ports.conf \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# Install xdebug
-RUN yes | pecl install xdebug \
-    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.mode = debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.start_with_request = yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_port = 9000" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && rm -rf /tmp/pear
 
-# Install composer
-RUN curl -sSL https://getcomposer.org/installer | php \
-    && chmod +x composer.phar \
-    && mv composer.phar /usr/local/bin/composer
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="none"
@@ -47,13 +36,3 @@ RUN rm -rf /tmp/library-scripts
 # [Optional] Uncomment this section to install additional packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 #     && apt-get -y install --no-install-recommends <your-package-list-here>
-
-RUN wget https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
-    && unzip develop.zip \
-    && cd parallel-develop \
-    && phpize \
-    && ./configure --enable-parallel \
-    && make \
-    && make test \
-    && make install \
-    && bash -c "echo extension=parallel.so > /usr/local/etc/php/conf.d/parallel.ini"

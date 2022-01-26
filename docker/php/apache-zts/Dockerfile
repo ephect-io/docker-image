@@ -274,6 +274,30 @@ RUN set -eux; \
 # smoke test
 	php --version
 
+# Install xdebug
+RUN yes | pecl install xdebug \
+    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.mode = debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.start_with_request = yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.client_port = 9000" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && rm -rf /tmp/pear
+
+# Install parallel
+RUN wget https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
+    && unzip develop.zip \
+    && cd parallel-develop \
+    && phpize \
+    && ./configure --enable-parallel \
+    && make \
+    && make test \
+    && make install \
+    && bash -c "echo extension=parallel.so > /usr/local/etc/php/conf.d/parallel.ini"
+
+# Install composer
+RUN curl -sSL https://getcomposer.org/installer | php \
+    && chmod +x composer.phar \
+    && mv composer.phar /usr/local/bin/composer
+
 COPY docker-php-ext-* docker-php-entrypoint /usr/local/bin/
 
 # sodium was built as a shared module (so that it can be replaced later if so desired), so let's enable it too (https://github.com/docker-library/php/issues/598)
