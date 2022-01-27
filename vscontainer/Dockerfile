@@ -1,6 +1,6 @@
 # [Choice] PHP version (use -bullseye variants on local arm64/Apple Silicon): 8-apache-bullseye, 8.1-apache-bullseye, 8.0-apache-bullseye, 7-apache-bullseye, 7.4-apache-bullseye, 8-apache-buster, 8.1-apache-buster, 8.0-apache-buster, 7-apache-buster, 7.4-apache-buster
-ARG VARIANT=7-apache-bullseye
-FROM ephect/apache-php-zts:8.0.15
+ARG VARIANT=8.0.15
+FROM ephect/apache-php-zts:${VARIANT}
 
 # Copy library scripts to execute
 COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
@@ -23,7 +23,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
-ARG NODE_VERSION="none"
+ARG NODE_VERSION="lts/*"
 ENV NVM_DIR=/usr/local/share/nvm
 ENV NVM_SYMLINK_CURRENT=true \
     PATH=${NVM_DIR}/current/bin:${PATH}

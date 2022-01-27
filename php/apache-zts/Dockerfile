@@ -274,24 +274,40 @@ RUN set -eux; \
 # smoke test
 	php --version
 
+#display_errors = Off
+RUN echo "display_startup_errors = On" > /usr/local/etc/php/php.ini \
+	&& echo "log_errors = On" >> /usr/local/etc/php/php.ini \
+	&& echo "error_log = php_errors.log" >> /usr/local/etc/php/php.ini \
+	&& echo "log_errors_max_len = 1024" >> /usr/local/etc/php/php.ini \
+	&& echo "ignore_repeated_errors = Off" >> /usr/local/etc/php/php.ini \
+	&& echo "ignore_repeated_source = Off" >> /usr/local/etc/php/php.ini
+
+
 # Install xdebug
 RUN yes | pecl install xdebug \
     && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.mode = debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
     && echo "xdebug.start_with_request = yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_port = 9000" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.client_port = 9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
     && rm -rf /tmp/pear
 
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends unzip; \
+	rm -rf /var/lib/apt/lists/*;
+
 # Install parallel
-RUN wget https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
+RUN curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
     && unzip develop.zip \
     && cd parallel-develop \
     && phpize \
     && ./configure --enable-parallel \
     && make \
-    && make test \
     && make install \
-    && bash -c "echo extension=parallel.so > /usr/local/etc/php/conf.d/parallel.ini"
+	&& cd .. \
+	&& rm develop.zip \
+	&& rm -rf parallel-develop \
+    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini
 
 # Install composer
 RUN curl -sSL https://getcomposer.org/installer | php \
