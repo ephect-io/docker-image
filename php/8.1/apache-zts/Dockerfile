@@ -116,11 +116,11 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV GPG_KEYS 1729F83938DA44E27BA0F4D3DBDB397470D12172 BFDDD28642824F8118EF77909B67A5C12229118F
+ENV GPG_KEYS 528995BFEDFBA7191D46839EF9BA0ADA31CBD89E 39B641343D8C104B2B146DC3F9C39DC0B9698544 F1F692238FBC1666E5A5CCD4199F9DFEF6FFBAFD
 
-ENV PHP_VERSION 8.0.15
-ENV PHP_URL="https://www.php.net/distributions/php-8.0.15.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.0.15.tar.xz.asc"
-ENV PHP_SHA256="5f33544061d37d805a2a9ce791f081ef08a7155bd7ba2362e69bba2d06b0f8b2"
+ENV PHP_VERSION 8.1.2
+ENV PHP_URL="https://www.php.net/distributions/php-8.1.2.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.1.2.tar.xz.asc"
+ENV PHP_SHA256="6b448242fd360c1a9f265b7263abf3da25d28f2b2b0f5465533b69be51a391dd"
 
 RUN set -eux; \
 	\
@@ -229,11 +229,9 @@ RUN set -eux; \
 		--disable-cgi \
 		\
 		--with-apxs2 \
-# https://github.com/docker-library/php/pull/939#issuecomment-730501748
-#		--enable-embed \
 		\
 		--enable-zts \
-    ; \
+	; \
 	make -j "$(nproc)"; \
 	find -type f -name '*.a' -delete; \
 	make install; \
@@ -273,46 +271,6 @@ RUN set -eux; \
 	\
 # smoke test
 	php --version
-
-#display_errors = Off
-RUN echo "display_startup_errors = On" > /usr/local/etc/php/php.ini \
-	&& echo "log_errors = On" >> /usr/local/etc/php/php.ini \
-	&& echo "error_log = php_errors.log" >> /usr/local/etc/php/php.ini \
-	&& echo "log_errors_max_len = 1024" >> /usr/local/etc/php/php.ini \
-	&& echo "ignore_repeated_errors = Off" >> /usr/local/etc/php/php.ini \
-	&& echo "ignore_repeated_source = Off" >> /usr/local/etc/php/php.ini
-
-
-# Install xdebug
-RUN yes | pecl install xdebug \
-    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.mode = debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.start_with_request = yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_port = 9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && rm -rf /tmp/pear
-
-RUN set -eux; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends unzip; \
-	rm -rf /var/lib/apt/lists/*;
-
-# Install parallel
-RUN curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
-    && unzip develop.zip \
-    && cd parallel-develop \
-    && phpize \
-    && ./configure --enable-parallel \
-    && make \
-    && make install \
-	&& cd .. \
-	&& rm develop.zip \
-	&& rm -rf parallel-develop \
-    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini
-
-# Install composer
-RUN curl -sSL https://getcomposer.org/installer | php \
-    && chmod +x composer.phar \
-    && mv composer.phar /usr/local/bin/composer
 
 COPY docker-php-ext-* docker-php-entrypoint /usr/local/bin/
 

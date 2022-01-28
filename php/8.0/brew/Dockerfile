@@ -73,26 +73,35 @@ RUN apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
     SHELL ["/bin/bash", "-c"]
 
+# generate locale for agnoster
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && /usr/sbin/locale-gen
+
+# set home
+ENV HOME=/home/$USER_NAME
+
+# the user we're applying this too (otherwise it most likely install for root)
+USER $USER_NAME
+
 # phpbrew root stores the php installation
-ENV PHPBREW_ROOT /root/.phpbrew
+ENV PHPBREW_ROOT=$HOME/.phpbrew
 
 # phpbrew home stores the user preference
-ENV PHPBREW_HOME /root/.phpbrew
+ENV PHPBREW_HOME=$HOME/.phpbrew
 
-ENV PHPBREW_BIN=/root/.phpbrew/bin
+ENV PHPBREW_BIN=$HOME/.phpbrew/bin
 
 # enable bash prompt
-ENV PHPBREW_SET_PROMPT 1
+ENV PHPBREW_SET_PROMPT=1
 
 # init and setup phpbrew
 RUN phpbrew init \
- && echo 'source $HOME/.phpbrew/bashrc' >> /root/.bashrc
+ && echo 'source $HOME/.phpbrew/bashrc' >> $HOME/.bashrc
 
 ARG PHP_VERSION=8.0.15
 ARG PHP_DIST_NAME=$PHP_VERSION
 ARG PHP_MIRROR=https://www.mirrorservice.org/sites/www.php.net/
 ARG DOWNLOADER=wget
-ARG PHP_VARIANTS=
+ARG PHP_VARIANTS="+bcmath +calendar +ctype +dom +fileinfo +fpm +ipc +mhash +openssl +pcre +pdo +pear +readline +sockets +sqlite +tokenizer +zip"
 
 # predownload the distribution file
 RUN source ~/.phpbrew/bashrc \
@@ -102,35 +111,28 @@ RUN source ~/.phpbrew/bashrc \
 RUN source ~/.phpbrew/bashrc \
  && phpbrew --debug install --downloader $DOWNLOADER --stdout \
               $PHP_VERSION as $PHP_DIST_NAME \
-              #+cli +phar +curl +json +bz2 +xml +filter +hash +mbregex +mbstring +posix +pcntl $PHP_VARIANTS \
-              +bcmath +bz2 +calendar +cli +ctype +dom +fileinfo +filter +fpm +ipc +json +mbregex +mbstring +mhash +pcntl +pcre +pdo +pear +phar +posix +readline +sockets +tokenizer +xml +curl +openssl +zip +sqlite -- --enable-zts \
+              +cli +phar +curl +json +bz2 +xml +filter +hash +mbregex +mbstring +posix +pcntl $PHP_VARIANTS \
+              #+bcmath +bz2 +calendar +cli +ctype +dom +fileinfo +filter +fpm +ipc +json +mbregex +mbstring +mhash +pcntl +pcre +pdo +pear +phar +posix +readline +sockets +tokenizer +xml +curl +openssl +zip +sqlite -- --enable-zts \
+               -- --enable-zts \
  && phpbrew use $PHP_DIST_NAME \
  && which php \
  && php -v \
  && phpbrew info \
  && mkdir -p /src/php \
- && ln -s /root/.phpbrew/build/$PHPBREW_PHP /src/php/$PHPBREW_PHP
+ && ln -s $HOME/.phpbrew/build/$PHPBREW_PHP /src/php/$PHPBREW_PHP
 
 ENV PHPBREW_PHP=$PHP_DIST_NAME
-ENV PATH=/root/.phpbrew/php/$PHP_DIST_NAME/bin:$PATH
+ENV PATH=$HOME/.phpbrew/php/$PHP_DIST_NAME/bin:$PATH
+
+# oh-my-zsh
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
 
-# oh-my-zsh
-# set home
-ENV HOME /home/$USER_NAME
-
-# generate locale for agnoster
-RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && /usr/sbin/locale-gen
-
-# the user we're applying this too (otherwise it most likely install for root)
-USER $USER_NAME
-
-ENV TERM xterm
+ENV TERM=xterm
 
 # Set the default shell to bash rather than sh
-ENV SHELL /bin/zsh
+ENV SHELL=/bin/zsh
 
 # run the installation script  
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true \
@@ -146,6 +148,6 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     php composer-setup.php \
     php -r "unlink('composer-setup.php');"
 
-ENV PORT 8222
+EXPOSE 9000
 ENTRYPOINT []
 CMD /bin/sh -c "while sleep 1000; do :; done"

@@ -2,9 +2,9 @@ version: "3.0"
 services:
   ephect:
     build: ./docker
-    image: cpascher:latest
+    image: myimage:latest
     ports:
-     - '8223:443'
-     - '8222:8888'
+     - '8883:443'
+     - '8888:8888'
     volumes:
      - .:/Sites
