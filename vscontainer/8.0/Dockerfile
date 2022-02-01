@@ -32,13 +32,13 @@ RUN bash /tmp/library-scripts/node-debian.sh "${NVM_DIR}" "${NODE_VERSION}" "${U
 RUN rm -rf /tmp/library-scripts
 
 #display_errors = Off
-RUN echo "display_startup_errors = On" > /usr/local/etc/php/php.ini \
-	&& echo "log_errors = On" >> /usr/local/etc/php/php.ini \
+RUN echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
+    && echo "display_errors = Off" > /usr/local/etc/php/php.ini \	
+    && echo "log_errors = On" >> /usr/local/etc/php/php.ini \
 	&& echo "error_log = php_errors.log" >> /usr/local/etc/php/php.ini \
 	&& echo "log_errors_max_len = 1024" >> /usr/local/etc/php/php.ini \
 	&& echo "ignore_repeated_errors = Off" >> /usr/local/etc/php/php.ini \
 	&& echo "ignore_repeated_source = Off" >> /usr/local/etc/php/php.ini
-
 
 # Install xdebug
 RUN yes | pecl install xdebug \
