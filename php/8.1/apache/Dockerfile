@@ -230,8 +230,6 @@ RUN set -eux; \
 		--disable-cgi \
 		\
 		--with-apxs2 \
-		\
-		--enable-zts \
 	; \
 	make -j "$(nproc)"; \
 	find -type f -name '*.a' -delete; \
