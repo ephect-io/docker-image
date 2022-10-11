@@ -10,14 +10,13 @@ ARG INSTALL_ZSH="true"
 # [Option] Upgrade OS packages to their latest versions
 ARG UPGRADE_PACKAGES="true"
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
-ARG USERNAME=vscode
+ARG USERNAME=salamandra
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
-    && apt-get -y install --no-install-recommends lynx \
+    && apt-get -y install --no-install-recommends lynx vim \
     && usermod -aG www-data ${USERNAME} \
-    && sed -i -e "s/Listen 80/Listen 80\\nListen 8080/g" /etc/apache2/ports.conf \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
@@ -31,7 +30,7 @@ RUN bash /tmp/library-scripts/node-debian.sh "${NVM_DIR}" "${NODE_VERSION}" "${U
 # Remove library scripts for final image
 RUN rm -rf /tmp/library-scripts
 
-#display_errors = Off
+# display_errors = Off
 RUN echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
     && echo "display_errors = Off" > /usr/local/etc/php/php.ini \	
     && echo "log_errors = On" >> /usr/local/etc/php/php.ini \
@@ -57,28 +56,14 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends unzip; \
 	rm -rf /var/lib/apt/lists/*;
 
-# Install parallel
-RUN curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
-    && unzip develop.zip \
-    && cd parallel-develop \
-    && sed -E "s/ZEND_TYPE_HAS_CLASS/ZEND_TYPE_IS_COMPLEX/" -i src/check.c \
-    && phpize \
-    && ./configure --enable-parallel \
-    && make \
-    && make install \
-	&& cd .. \
-	&& rm develop.zip \
-	&& rm -rf parallel-develop \
-    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini
-
 # Install composer
 RUN curl -sSL https://getcomposer.org/installer | php \
     && chmod +x composer.phar \
     && mv composer.phar /usr/local/bin/composer
 
-RUN echo "vscode ALL=(ALL) NOPASSWD: ALL" >  /etc/sudoers.d/vscode
+RUN echo "salamandra ALL=(ALL) NOPASSWD: ALL" >  /etc/sudoers.d/salamandra
 
 # [Optional] Uncomment this section to install additional packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
-EXPOSE 3000
+#     && apt-get -y install --no-install-recommends vim
+

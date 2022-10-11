@@ -167,6 +167,7 @@ RUN set -eux; \
 		libreadline-dev \
 		libsodium-dev \
 		libsqlite3-dev \
+		default-libmysqlclient-dev \
 		libssl-dev \
 		libxml2-dev \
 		zlib1g-dev \
@@ -203,7 +204,7 @@ RUN set -eux; \
 		--enable-ftp \
 # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
 		--enable-mbstring \
-		--enable-pnctl \
+		--enable-pcntl \
 # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
 		--enable-mysqlnd \
 # https://wiki.php.net/rfc/argon2_password_hash
@@ -212,6 +213,7 @@ RUN set -eux; \
 		--with-sodium=shared \
 # always build against system sqlite3 (https://github.com/php/php-src/commit/6083a387a81dbbd66d6316a3a12a63f06d5f7109)
 		--with-pdo-sqlite=/usr \
+		--with-pdo-mysql=/usr \
 		--with-sqlite3=/usr \
 		\
 		--with-curl \
