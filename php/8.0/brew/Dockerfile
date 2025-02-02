@@ -1,6 +1,6 @@
 FROM debian:bullseye-slim
 
-LABEL MAINTAINER = "David Blanchard <david.blanchard71@icloud.com>"
+LABEL MAINTAINER="David Blanchard <david.blanchard71@icloud.com>"
 
 ENV DEBIAN_FRONTEND "noninteractive"
 
@@ -13,7 +13,6 @@ RUN apt-get update && apt-get -y upgrade \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     && apt-get -y install git openssh-client inetutils-tools inetutils-ping less iproute2 procps lsb-release libzip-dev zip unzip bc libtidy-dev libpng-dev \
     curl gnupg locales zsh wget fonts-powerline \
-
 # Create a non-root user to use if preferred - see https://aka.ms/vscode-remote/containers/non-root-user.
     && groupadd --gid $USER_GID $USERNAME \
     && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
@@ -71,7 +70,8 @@ RUN apt-get install -y --no-install-recommends \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
-    SHELL ["/bin/bash", "-c"]
+
+SHELL ["/bin/bash", "-c"]
 
 # generate locale for agnoster
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && /usr/sbin/locale-gen

@@ -33,7 +33,7 @@ RUN rm -rf /tmp/library-scripts
 
 #display_errors = Off
 RUN echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
-    && echo "display_errors = Off" > /usr/local/etc/php/php.ini \	
+    && echo "display_errors = Off" > /usr/local/etc/php/php.ini \
     && echo "log_errors = On" >> /usr/local/etc/php/php.ini \
 	&& echo "error_log = php_errors.log" >> /usr/local/etc/php/php.ini \
 	&& echo "log_errors_max_len = 1024" >> /usr/local/etc/php/php.ini \
