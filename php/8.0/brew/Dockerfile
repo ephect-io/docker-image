@@ -1,6 +1,6 @@
 FROM debian:bullseye-slim
 
-LABEL MAINTAINER "David Blanchard <david.blanchard@cewe.fr>"
+LABEL MAINTAINER "David Blanchard <david.blanchard71@icloud.com>"
 
 ENV DEBIAN_FRONTEND "noninteractive"
 
