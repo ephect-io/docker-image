@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # prevent Debian's PHP packages from being installed
 # https://github.com/docker-library/php/pull/542
@@ -46,7 +46,7 @@ RUN set -eux; \
 	[ ! -d /var/www/html ]; \
 	mkdir -p /var/www/html; \
 	chown www-data:www-data /var/www/html; \
-	chmod 777 /var/www/html
+	chmod 1777 /var/www/html
 
 # Apply stack smash protection to functions using local buffers and alloca()
 # Make PHP's main executable position-independent (improves ASLR security mechanism, and has no performance impact on x86_64)
@@ -58,17 +58,17 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV GPG_KEYS 1729F83938DA44E27BA0F4D3DBDB397470D12172 BFDDD28642824F8118EF77909B67A5C12229118F
+ENV GPG_KEYS 39B641343D8C104B2B146DC3F9C39DC0B9698544 E60913E4DF209907D8E30D96659A97C9CF2A795A 1198C0117593497A5EC5C199286AF1F9897469DC
 
-ENV PHP_VERSION 8.0.15
-ENV PHP_URL="https://www.php.net/distributions/php-8.0.15.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.0.15.tar.xz.asc"
-ENV PHP_SHA256="5f33544061d37d805a2a9ce791f081ef08a7155bd7ba2362e69bba2d06b0f8b2"
+ENV PHP_VERSION 8.2.27
+ENV PHP_URL="https://www.php.net/distributions/php-8.2.27.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.2.27.tar.xz.asc"
+ENV PHP_SHA256="3eec91294d8c09b3df80b39ec36d574ed9b05de4c8afcb25fa215d48f9ecbc6b"
 
 RUN set -eux; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
-	apt-get install -y --no-install-recommends gnupg dirmngr; \
+	apt-get install -y --no-install-recommends gnupg; \
 	rm -rf /var/lib/apt/lists/*; \
 	\
 	mkdir -p /usr/src; \
@@ -117,6 +117,9 @@ RUN set -eux; \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
 		LDFLAGS="$PHP_LDFLAGS" \
+# https://github.com/php/php-src/blob/d6299206dd828382753453befd1b915491b741c6/configure.ac#L1496-L1511
+		PHP_BUILD_PROVIDER='https://github.com/docker-library/php' \
+		PHP_UNAME='Linux - Docker' \
 	; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
@@ -155,22 +158,24 @@ RUN set -eux; \
 		--with-sqlite3=/usr \
 		\
 		--with-curl \
+		--with-iconv \
 		--with-openssl \
 		--with-readline \
 		--with-zlib \
 		\
+# https://github.com/bwoebi/phpdbg-docs/issues/1#issuecomment-163872806 ("phpdbg is primarily a CLI debugger, and is not suitable for debugging an fpm stack.")
+		--disable-phpdbg \
+		\
 # in PHP 7.4+, the pecl/pear installers are officially deprecated (requiring an explicit "--with-pear")
 		--with-pear \
 		\
-# bundled pcre does not support JIT on s390x
-# https://manpages.debian.org/bullseye/libpcre3-dev/pcrejit.3.en.html#AVAILABILITY_OF_JIT_SUPPORT
-		$(test "$gnuArch" = 's390x-linux-gnu' && echo '--without-pcre-jit') \
+# bundled pcre does not support JIT on riscv64 until 10.41 (php 8.3+)
+# https://github.com/PCRE2Project/pcre2/commits/pcre2-10.41/src/sljit/sljitNativeRISCV_64.c
+# https://github.com/php/php-src/tree/php-8.3.0/ext/pcre/pcre2lib
+		$(test "$gnuArch" = 'riscv64-linux-gnu' && echo '--without-pcre-jit') \
 		--with-libdir="lib/$debMultiarch" \
 		\
 		--disable-cgi \
-		\
-# https://github.com/docker-library/php/pull/939#issuecomment-730501748
-		--enable-embed \
 		\
 		--enable-zts \
 		--enable-fpm \
@@ -200,7 +205,7 @@ RUN set -eux; \
 	apt-mark auto '.*' > /dev/null; \
 	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
 	find /usr/local -type f -executable -exec ldd '{}' ';' \
-		| awk '/=>/ { print $(NF-1) }' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
 		| xargs -r dpkg-query --search \
 		| cut -d: -f1 \
@@ -246,7 +251,8 @@ RUN set -eux; \
 		echo; echo '; https://github.com/docker-library/php/pull/725#issuecomment-443540114'; echo 'log_limit = 8192'; \
 		echo; \
 		echo '[www]'; \
-		echo '; if we send this to /proc/self/fd/1, it never appears'; \
+		echo '; php-fpm closes STDOUT on startup, so sending logs to /proc/self/fd/1 does not work.'; \
+		echo '; https://bugs.php.net/bug.php?id=73886'; \
 		echo 'access.log = /proc/self/fd/2'; \
 		echo; \
 		echo 'clear_env = no'; \
@@ -261,7 +267,12 @@ RUN set -eux; \
 		echo; \
 		echo '[www]'; \
 		echo 'listen = 9000'; \
-	} | tee php-fpm.d/zz-docker.conf
+	} | tee php-fpm.d/zz-docker.conf; \
+	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	{ \
+		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
+		echo 'fastcgi.logging = Off'; \
+	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"
 
 # Override stop signal to stop process gracefully
 # https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
