@@ -1,6 +1,6 @@
 FROM debian:bullseye-slim
 
-LABEL MAINTAINER "David Blanchard <david.blanchard71@icloud.com>"
+LABEL MAINTAINER = "David Blanchard <david.blanchard71@icloud.com>"
 
 ENV DEBIAN_FRONTEND "noninteractive"
 
@@ -148,6 +148,6 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     php composer-setup.php \
     php -r "unlink('composer-setup.php');"
 
-EXPOSE 9000
+EXPOSE 9003
 ENTRYPOINT []
 CMD /bin/sh -c "while sleep 1000; do :; done"
