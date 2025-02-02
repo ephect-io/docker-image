@@ -14,7 +14,7 @@ export NODE_VERSION=${2:-"lts"}
 USERNAME=${3:-"automatic"}
 UPDATE_RC=${4:-"true"}
 INSTALL_TOOLS_FOR_NODE_GYP="${5:-true}"
-export NVM_VERSION="0.38.0"
+export NVM_VERSION="0.40.1"
 
 set -e
 
