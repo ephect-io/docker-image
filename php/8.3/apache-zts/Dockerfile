@@ -17,16 +17,7 @@ RUN set -eux; \
 
 # dependencies required for running "phpize"
 # (see persistent deps below)
-ENV PHPIZE_DEPS \
-		autoconf \
-		dpkg-dev \
-		file \
-		g++ \
-		gcc \
-		libc-dev \
-		make \
-		pkg-config \
-		re2c
+ENV PHPIZE_DEPS="autoconf dpkg-dev file g++ gcc libc-dev make pkg-config re2c"
 
 # persistent / runtime deps
 RUN set -eux; \
@@ -39,7 +30,7 @@ RUN set -eux; \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
-ENV PHP_INI_DIR /usr/local/etc/php
+ENV PHP_INI_DIR=/usr/local/etc/php
 RUN set -eux; \
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 # allow running as an arbitrary user (https://github.com/docker-library/php/issues/743)
@@ -48,8 +39,8 @@ RUN set -eux; \
 	chown www-data:www-data /var/www/html; \
 	chmod 1777 /var/www/html
 
-ENV APACHE_CONFDIR /etc/apache2
-ENV APACHE_ENVVARS $APACHE_CONFDIR/envvars
+ENV APACHE_CONFDIR=/etc/apache2
+ENV APACHE_ENVVARS="$APACHE_CONFDIR/envvars"
 
 RUN set -eux; \
 	apt-get update; \
@@ -118,9 +109,9 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV GPG_KEYS 1198C0117593497A5EC5C199286AF1F9897469DC C28D937575603EB4ABB725861C0779DC5C0A9DE4 AFD8691FDAEDF03BDF6E460563F15A9B715376CA
+ENV GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC C28D937575603EB4ABB725861C0779DC5C0A9DE4 AFD8691FDAEDF03BDF6E460563F15A9B715376CA"
 
-ENV PHP_VERSION 8.3.16
+ENV PHP_VERSION=8.3.16
 ENV PHP_URL="https://www.php.net/distributions/php-8.3.16.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.3.16.tar.xz.asc"
 ENV PHP_SHA256="40d3b4e6cac33d3bcefe096d75a28d4fb4e3a9615eb20a4de55ba139fbfacdd5"
 
