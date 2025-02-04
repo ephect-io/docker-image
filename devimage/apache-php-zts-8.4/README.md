@@ -11,7 +11,7 @@ docker login
 Build the image from the current README directory
 
 ```bash
-docker build . -t epehct/dev-images-php:8.4.3
+docker build . -t epehct/dev-image-php:8.4.3
 ```
 
 ## Push image to DockerHub repo
@@ -19,5 +19,5 @@ docker build . -t epehct/dev-images-php:8.4.3
 Push by
 
 ```bash
-docker push ephect/dev-images-php:8.4.3
+docker push ephect/dev-image-php:8.4.3
 ```
