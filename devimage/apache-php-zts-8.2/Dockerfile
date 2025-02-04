@@ -2,9 +2,6 @@
 ARG VARIANT=8.2.27
 FROM ephect/php-apache:${VARIANT}
 
-# Copy library scripts to execute
-COPY library-scripts/common-debian.sh library-scripts/node-debian.sh library-scripts/meta.env /tmp/library-scripts/
-
 # [Option] Install zsh
 ARG INSTALL_ZSH="true"
 # [Option] Upgrade OS packages to their latest versions
@@ -14,22 +11,13 @@ ARG USERNAME=salamandra
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
-    && apt-get -y install --no-install-recommends lynx vim \
+    && apt-get -y install --no-install-recommends lynx vim sudo \
+    && groupadd --gid $USER_GID $USERNAME \
+    && useradd -s /bin/bash --uid $USER_UID --gid $USERNAME -m $USERNAME \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
     && usermod -aG www-data ${USERNAME} \
-    && sed -i -e "s/Listen 80/Listen 80\\nListen 8080/g" /etc/apache2/ports.conf \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-
-# [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
-ARG NODE_VERSION="lts/*"
-ENV NVM_DIR=/usr/local/share/nvm
-ENV NVM_SYMLINK_CURRENT=true \
-    PATH=${NVM_DIR}/current/bin:${PATH}
-RUN bash /tmp/library-scripts/node-debian.sh "${NVM_DIR}" "${NODE_VERSION}" "${USERNAME}" \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-
-# Remove library scripts for final image
-RUN rm -rf /tmp/library-scripts
 
 # display_errors = Off
 RUN echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
@@ -75,7 +63,18 @@ RUN curl -sSL https://getcomposer.org/installer | php \
     && chmod +x composer.phar \
     && mv composer.phar /usr/local/bin/composer
 
-RUN echo "salamandra ALL=(ALL) NOPASSWD: ALL" >  /etc/sudoers.d/salamandra
+# Use bash for the shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Create a script file sourced by both interactive and non-interactive bash shells
+ENV BASH_ENV=/home/$USERNAME/.bash_env
+RUN touch "${BASH_ENV}"
+RUN echo '. "${BASH_ENV}"' >> ~/.bashrc
+
+# Download and install nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | PROFILE="${BASH_ENV}" bash
+RUN echo node > .nvmrc
+RUN nvm install --lts
 
 # [Optional] Uncomment this section to install additional packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
