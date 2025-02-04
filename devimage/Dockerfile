@@ -1,7 +1,6 @@
 # [Choice] PHP version (add -arm64 after the variant for arm64/Apple Silicon): 8.4.3, 8.3.16, 8.2.27, 8.1.9
-ARG ARCH
-ARG VARIANT=8.4.3
-FROM ephect/php-apache:${VARIANT}${ARCH}
+ARG VERSION=8.4.3
+FROM ephect/php-apache:${VERSION}
 
 # [Option] Install zsh
 ARG INSTALL_ZSH="true"
