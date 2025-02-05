@@ -1,23 +1,18 @@
-ARCH := $(shell uname -m)
+ARCH = $(shell uname -m)
 version ?= 8.4.3
+TAG = ephect/dev-image-php:$(version)
 
-ifeq ($(ARCH), arm64)
-	version := "$(version)-$(ARCH)"
-endif
-
-TAG := "ephect/dev-image-php:$(version)"
 # Default target
-default:
-	@echo "Build version: $(version)"
+default: help
 
 # Example of using architecture-specific logic
 build:
 ifeq ($(ARCH), x86_64)
 	@echo "Building for X86_64 architecture"
-	docker build --build-arg VERSION=$(version) -t $(TAG)
+	docker build . --build-arg VERSION=$(version) -t $(TAG)
 else ifeq ($(ARCH), arm64)
 	@echo "Building for ARM64 architecture"
-	docker build --build-arg VERSION=$(version) -t $(TAG)
+	docker build .  --build-arg VERSION=$(version)-${ARCH} -t $(TAG)-${ARCH}
 else
 	@echo "Unknown architecture: $(ARCH)"
 endif
@@ -28,7 +23,19 @@ ifeq ($(ARCH), x86_64)
 	docker push $(TAG)
 else ifeq ($(ARCH), arm64)
 	@echo "Pushing the image of DockerHub"
-	docker push $(TAG)
+	docker push $(TAG)-${ARCH}
+else
+	@echo "Unknown architecture: $(ARCH)"
+endif
+
+
+show:
+ifeq ($(ARCH), x86_64)
+	@echo "Show build command for $(ARCH) architecture:"
+	@echo "> docker build . --build-arg VERSION=$(version) -t $(TAG)"
+else ifeq ($(ARCH), arm64)
+	@echo "Show build command for $(ARCH) architecture:"
+	@echo "> docker build . --build-arg VERSION=$(version)-$(ARCH) -t $(TAG)-$(ARCH)"
 else
 	@echo "Unknown architecture: $(ARCH)"
 endif
