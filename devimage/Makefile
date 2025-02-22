@@ -7,38 +7,16 @@ default: help
 
 # Example of using architecture-specific logic
 build:
-ifeq ($(ARCH), x86_64)
-	@echo "Building for X86_64 architecture"
-	docker build . --build-arg VERSION=$(version) -t $(TAG)
-else ifeq ($(ARCH), arm64)
-	@echo "Building for ARM64 architecture"
-	docker build .  --build-arg VERSION=$(version)-${ARCH} -t $(TAG)-${ARCH}
-else
-	@echo "Unknown architecture: $(ARCH)"
-endif
+	@echo "Building on $(ARCH) architecture"
+	docker buildx build --platform linux/amd64,linux/arm64/v8 . --build-arg VERSION=$(version) -t $(TAG) --push
 
 push:
-ifeq ($(ARCH), x86_64)
-	@echo "Pushing the image of DockerHub"
+	@echo "Pushing the image on DockerHub"
 	docker push $(TAG)
-else ifeq ($(ARCH), arm64)
-	@echo "Pushing the image of DockerHub"
-	docker push $(TAG)-${ARCH}
-else
-	@echo "Unknown architecture: $(ARCH)"
-endif
-
 
 show:
-ifeq ($(ARCH), x86_64)
-	@echo "Show build command for $(ARCH) architecture:"
-	@echo "> docker build . --build-arg VERSION=$(version) -t $(TAG)"
-else ifeq ($(ARCH), arm64)
-	@echo "Show build command for $(ARCH) architecture:"
-	@echo "> docker build . --build-arg VERSION=$(version)-$(ARCH) -t $(TAG)-$(ARCH)"
-else
-	@echo "Unknown architecture: $(ARCH)"
-endif
+	@echo "Show build command on $(ARCH) architecture:"
+	@echo "> docker buildx build --platform linux/amd64,linux/arm64/v8 . --build-arg VERSION=$(version) -t $(TAG) --push"
 
 help:
 	@echo "make <command> <argument>"
