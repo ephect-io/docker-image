@@ -8,12 +8,12 @@ Login to DockerHub
 docker login
 ```
 
-Build the image from the current README directory which fully qualified name is epehct/dev-image-php:version-arch.
+Build the image for both X86_64 and ARM64 arch from the current README directory which fully qualified name is epehct/dev-image-php:version.
 
 Example:
 
 ```bash
-docker build . -t epehct/dev-image-php:8.4.3-arm64
+docker buildx build --platform linux/amd64/v3,linux/arm64/v8 . -t ephect/dev-image-php:8.4.3 -t ephect/dev-image-php:latest
 ```
 All possible versions values are:
 - 8.4.3
@@ -28,5 +28,5 @@ Available architectures are amd64 (x86 standard PC) and arm64 (Aplle silicon, et
 Be sure to use the same fully qualified tag name: 
 
 ```bash
-docker push ephect/dev-image-php:8.4.3-arm64
+docker push ephect/dev-image-php:8.4.3
 ```
