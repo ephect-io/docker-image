@@ -58,11 +58,19 @@ RUN curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zi
 	&& rm -rf parallel-develop \
     && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini
 
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends libzip-dev \
+    && pecl install zip \
+    && echo extension=zip.so > /usr/local/etc/php/conf.d/zip.ini
+
 # Install composer
 RUN curl -sSL https://getcomposer.org/installer | php \
     && chmod +x composer.phar \
     && mv composer.phar /usr/local/bin/composer
 
+#
+# User space installation
+#
 USER salamandra
 
 # Use bash for the shell
