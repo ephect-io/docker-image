@@ -1,6 +1,6 @@
 # [Choice] PHP version (add -arm64 after the variant for arm64/Apple Silicon): 8.4.3, 8.3.16, 8.2.27, 8.1.9
 ARG VERSION=8.4.3
-FROM ephect/php-apache-zts:${VERSION}
+FROM php:${VERSION}-fpm
 
 # [Option] Install zsh
 ARG INSTALL_ZSH="true"
@@ -45,19 +45,6 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends lynx vim git make unzip; \
 	rm -rf /var/lib/apt/lists/*;
 
-# Install parallel
-RUN curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
-    && unzip develop.zip \
-    && cd parallel-develop \
-    && phpize \
-    && ./configure --enable-parallel \
-    && make \
-    && make install \
-	&& cd .. \
-	&& rm develop.zip \
-	&& rm -rf parallel-develop \
-    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini
-
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends libzip-dev \
     && pecl install zip \
@@ -71,7 +58,7 @@ RUN curl -sSL https://getcomposer.org/installer | php \
 #
 # User space installation
 #
-USER salamandra
+USER $USERNAME
 
 # Use bash for the shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
