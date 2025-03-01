@@ -11,7 +11,7 @@ docker login
 Using the make command like this: 
 
 ```
-make build <package> <version>
+make build package=<package> version=<version>
 ```
 
 Possible package are:
@@ -23,7 +23,7 @@ Possible argument is:
 Example:
 
 ```
-  make build apache version=8.2.27
+  make build package=apache version=8.2.27
 ```
  
 This will build the PHP image in version 8.2.27 with a ready to use Apache server on port 80 for both X86_64 and ARM64 arch. 
@@ -31,6 +31,6 @@ This will build the PHP image in version 8.2.27 with a ready to use Apache serve
 ## Other commands
 
 ```
-make push <package> <version>
+make push package=<package> version=<version>
 make help
 ```

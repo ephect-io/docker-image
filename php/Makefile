@@ -1,7 +1,7 @@
 ARCH = $(shell uname -m)
 version ?= latest
-TAG = ephect/dev-image-php:$(version)
-PACKAGE = $(notdir $(CURDIR))
+package ?= apache
+TAG = ephect/dev-php:$(package)-$(version)
 
 # Default target
 default: help
@@ -35,6 +35,6 @@ help:
 	@echo " - version: any PHP version available in DockerHub at https://hub.docker.com/_/php/tags or nothing, default version is latest."
 	@echo
 	@echo "Example:"
-	@echo "  make build version=8.2.27"
+	@echo "  make build package=apache version=8.2.27"
 
 .PHONY: default help
