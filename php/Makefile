@@ -9,7 +9,7 @@ default: help
 # Example of using architecture-specific logic
 build:
 	@echo "Building on $(ARCH) architecture"
-	docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(PACKAGE) --build-arg VERSION=$(version) -t $(TAG) --push
+	docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(package) --build-arg VERSION=$(version) -t $(TAG) --push
 
 push:
 	@echo "Pushing the image on DockerHub"
@@ -17,9 +17,7 @@ push:
 
 show:
 	@echo "Show build command on $(ARCH) architecture:"
-	@echo "> docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(PACKAGE) --build-arg VERSION=$(version) -t $(TAG) --push"
-
-cwd:
+	@echo "> docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(package) --build-arg VERSION=$(version) -t $(TAG) --push"
 
 help:
 	@echo "make <command> <package> <argument>"
