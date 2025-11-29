@@ -3,6 +3,12 @@
 # Script de build avec génération automatique de README.md
 # Usage: ./build-and-log.sh <package> <version>
 
+# Sauvegarder le répertoire actuel et y revenir à la fin
+SCRIPT_DIR=$(pwd)
+trap 'cd "$SCRIPT_DIR"' EXIT
+
+cd php
+
 PACKAGE=${1:-apache}
 VERSION=${2:-8.5.0}
 ARCH=$(uname -m)
@@ -11,15 +17,10 @@ README_FILE="./${PACKAGE}/README.md"
 TEMP_CONTAINER="temp-build-log-$$"
 
 echo "========================================="
-echo "Building PHP ${VERSION} - ${PACKAGE}"
+echo "Logging PHP ${VERSION} - ${PACKAGE}"
 echo "========================================="
 
-# Build l'image
-echo "🔨 Building image..."
-cd php
-make build PACKAGE=${PACKAGE} VERSION=${VERSION}
-docker build ./${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG}
-BUILD_STATUS=$?
+BUILD_STATUS=0
 
 # Initialiser le README
 cat > "${README_FILE}" << EOF
@@ -38,9 +39,15 @@ EOF
 if [ $BUILD_STATUS -eq 0 ]; then
     echo "✅ Build réussi!"
 
+    # Pull l'image depuis la registry locale
+    echo "📥 Récupération de l'image depuis la registry locale..."
+    docker pull ${TAG} 2>/dev/null || {
+        echo "⚠️  Impossible de récupérer l'image depuis la registry"
+    }
+
     # Extraire le log depuis le conteneur
     echo "📝 Extraction du build log..."
-    docker run --rm --name ${TEMP_CONTAINER} ${TAG} cat /build-log.md >> "${README_FILE}" 2>/dev/null || {
+    docker run --rm --name ${TEMP_CONTAINER} ${TAG} cat /tmp/build-log.md >> "${README_FILE}" 2>/dev/null || {
         echo "⚠️  Impossible d'extraire le log depuis le conteneur" >> "${README_FILE}"
     }
 
@@ -105,5 +112,4 @@ fi
 
 echo "========================================="
 echo "✅ Processus terminé"
-echo "========================================="
-
+echo "========================================="   
