@@ -1,7 +1,9 @@
 ARCH = $(shell uname -m)
 version ?= 8.5.0
 package ?= apache
+repo ?= ephect/dev-php
 TAG = "localhost:5000/dev-php:$(package)-$(version)"
+REMOTE_TAG = "docker.io/ephect/dev-php:$(package)-$(version)"
 
 # Default target
 default: help
@@ -15,6 +17,19 @@ push:
 	@echo "Pushing the image on DockerHub"
 	docker push $(TAG)
 
+push-remote:
+	@echo "Pushing the image on remote DockerHub repository"
+	docker tag $(TAG) $(REMOTE_TAG)
+	docker push $(REMOTE_TAG)
+
+log:
+	@echo "Generating README with build log..."
+	cd .. && ./bin/log.sh $(package) $(version)
+
+describe-build:
+	@echo "Updating the build description..."
+	cd .. && ./bin/describe-build.sh $(repo) $(package)
+
 show:
 	@echo "Show build command on $(ARCH) architecture:"
 	@echo "> docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(package) --build-arg VERSION=$(version) -t $(TAG) --push"
@@ -24,15 +39,19 @@ help:
 	@echo
 	@echo "Possible commands are:"
 	@echo " - build: build the dev image for the given version and detected architecture,"
-	@echo " - push: push the dev image on DockerHub."
+	@echo " - push: push the dev image on DockerHub,"
+	@echo " - log: generate README.md with build log,"
+	@echo " - update-hub-description: update Docker Hub repository description with README.md."
 	@echo
 	@echo "Possible package are:"
-	@echo " - apahce, fpm, zts."
+	@echo " - apache, fpm, zts."
 	@echo
 	@echo "Possible argument is:"
 	@echo " - version: any PHP version available in DockerHub at https://hub.docker.com/_/php/tags or nothing, default version is latest."
 	@echo
 	@echo "Example:"
 	@echo "  make build package=apache version=8.2.27"
+	@echo "  make log package=apache version=8.5.0"
+	@echo "  make update-hub-description repo=ephectio/dev-php package=apache"
 
-.PHONY: default help
+.PHONY: default help log update-hub-description
