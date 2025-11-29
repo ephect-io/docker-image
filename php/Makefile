@@ -1,7 +1,7 @@
 ARCH = $(shell uname -m)
-version ?= latest
+version ?= 8.5.0
 package ?= apache
-TAG = ephect/dev-php:$(package)-$(version)
+TAG = "localhost:5000/dev-php:$(package)-$(version)"
 
 # Default target
 default: help
