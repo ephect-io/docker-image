@@ -1,16 +1,24 @@
 ARG VERSION=8.5.0
 FROM php:${VERSION}-zts
 
+ARG VERSION=8.5.0
 ARG USERNAME=salamandra
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
+# OCI Labels pour métadonnées
+LABEL org.opencontainers.image.title="PHP ${VERSION} ZTS Development Image"
+LABEL org.opencontainers.image.description="PHP ${VERSION} with ZTS, Xdebug, Composer, NVM and Node.js LTS"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.vendor="ephect"
+LABEL org.opencontainers.image.authors="David Blanchard"
+
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="./README.md"
+ENV LOG_FILE="/tmp/build-log.md"
 
 # Create build log
-RUN echo "# Build Log" > ${LOG_FILE}
+RUN touch ${LOG_FILE}
 
 
 # Base user setup (critique)
@@ -88,13 +96,14 @@ USER $USERNAME
 
 # NVM
 ENV STEP="NVM and Node.js"
-ENV BASH_ENV=/home/$USERNAME/.bash_env
-RUN touch "${BASH_ENV}" && echo '. "${BASH_ENV}"' >> ~/.bashrc
-
-RUN (curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | PROFILE="${BASH_ENV}" bash \
-    && echo node > .nvmrc \
-    && bash -c "source ${BASH_ENV} && nvm install --lts" \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+SHELL ["/bin/bash", "-c"]
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
+    echo 'export NVM_DIR="$HOME/.nvm"' >> "${BASH_ENV}" && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> "${BASH_ENV}" && \
+    source "${BASH_ENV}" && \
+    nvm install --lts && \
+    sudo bash -c "echo '$SUCCESS $STEP' >> $LOG_FILE" || (sudo bash -c "echo '$FAILURE $STEP' >> $LOG_FILE" && exit 1)
+SHELL ["/bin/sh", "-c"]
 
 # Display log at build time
 RUN cat $LOG_FILE
