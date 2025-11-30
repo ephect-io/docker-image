@@ -24,8 +24,12 @@ push-remote:
 	docker push $(REMOTE_TAG)
 
 overview:
-	@echo "Generating DockerHub repository overview..."
-	cd .. && ./bin/make-overview.sh $(package) $(version)
+	@echo "Generating README for all combinations..."
+	@if [ -z "$(packages)" ] || [ -z "$(versions)" ]; then \
+		echo "❌ Error: You must specify packages=apache,fpm and versions=8.4.15,8.5.0"; \
+		exit 1; \
+	fi
+	cd .. && ./bin/make-overview.sh $(packages) $(versions)
 
 publish:
 	@echo "Updating the repository overview..."
