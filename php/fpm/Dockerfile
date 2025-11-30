@@ -55,8 +55,8 @@ RUN (yes | pecl install xdebug \
     && rm -rf /tmp/pear \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
-# System packages
-ENV STEP="System packages"
+# Dev tools
+ENV STEP="Dev tools"
 RUN (apt-get update \
     && apt-get install -y --no-install-recommends lynx vim git make unzip \
     && rm -rf /var/lib/apt/lists/* \
