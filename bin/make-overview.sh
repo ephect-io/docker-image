@@ -104,10 +104,10 @@ cat >> "${SUMMARY_FILE}" << 'EOF'
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:apache-8.5.0
+docker pull ephect/dev-php:apache-8.5.0
 
 # Start a container
-docker run -d -p 8080:80 -v $(pwd):/var/www/html localhost:5000/dev-php:apache-8.5.0
+docker run -d -p 8080:80 -v $(pwd):/var/www/html ephect/dev-php:apache-8.5.0
 
 # Access container
 docker exec -it <container_id> bash
@@ -117,20 +117,20 @@ docker exec -it <container_id> bash
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:fpm-8.5.0
+docker pull ephect/dev-php:fpm-8.5.0
 
 # Start with nginx
-docker run -d -p 9000:9000 -v $(pwd):/var/www/html localhost:5000/dev-php:fpm-8.5.0
+docker run -d -p 9000:9000 -v $(pwd):/var/www/html ephect/dev-php:fpm-8.5.0
 ```
 
 ### ZTS (Zend Thread Safety)
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:zts-8.5.0
+docker pull ephect/dev-php:zts-8.5.0
 
 # Start a container
-docker run -it --rm localhost:5000/dev-php:zts-8.5.0 bash
+docker run -it --rm ephect/dev-php:zts-8.5.0 bash
 ```
 
 ---
@@ -254,4 +254,5 @@ echo "📊 Docker Hub summary: ${SUMMARY_FILE}"
 echo "========================================="
 
 cp "${SUMMARY_FILE}" ../README.md
-cat ../registry/README_MORE.md >> ../README.md
+cat ../registry/more_info.md >> ../README.md
+cat ../devcontainer/more_info.md >> ../README.md

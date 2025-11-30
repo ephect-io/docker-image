@@ -2,7 +2,7 @@
 
 Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebug, Composer, NVM and Node.js LTS.
 
-**Last update:** 2025-11-30 21:36:22  
+**Last update:** 2025-11-30 22:50:29  
 **Architecture:** x86_64  
 **Registry:** [ephect/dev-php](https://hub.docker.com/r/ephect/dev-php)
 
@@ -12,11 +12,11 @@ Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebu
 
 | Package | Version | Pull Command | Size | Build Status |
 |---------|---------|--------------|------|--------------|
-| **apache** | 8.5.0 | `docker pull localhost:5000/dev-php:apache-8.5.0` | 1.57GB | ✅ Available |
-| **apache** | 8.4.15 | `docker pull localhost:5000/dev-php:apache-8.4.15` | 1.55GB | ✅ Available |
-| **apache** | 8.3.28 | `docker pull localhost:5000/dev-php:apache-8.3.28` | 1.54GB | ✅ Available |
-| **apache** | 8.2.29 | `docker pull localhost:5000/dev-php:apache-8.2.29` | 1.53GB | ✅ Available |
-| **apache** | 8.1.33 | `docker pull localhost:5000/dev-php:apache-8.1.33` | 1.53GB | ✅ Available |
+| **apache** | 8.5.0 | `docker pull ephect/dev-php:apache-8.5.0` | 1.57GB | ✅ Available |
+| **apache** | 8.4.15 | `docker pull ephect/dev-php:apache-8.4.15` | 1.55GB | ✅ Available |
+| **apache** | 8.3.28 | `docker pull ephect/dev-php:apache-8.3.28` | 1.54GB | ✅ Available |
+| **apache** | 8.2.29 | `docker pull ephect/dev-php:apache-8.2.29` | 1.53GB | ✅ Available |
+| **apache** | 8.1.33 | `docker pull ephect/dev-php:apache-8.1.33` | 1.53GB | ✅ Available |
 
 ---
 
@@ -26,10 +26,10 @@ Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebu
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:apache-8.5.0
+docker pull ephect/dev-php:apache-8.5.0
 
 # Start a container
-docker run -d -p 8080:80 -v $(pwd):/var/www/html localhost:5000/dev-php:apache-8.5.0
+docker run -d -p 8080:80 -v $(pwd):/var/www/html ephect/dev-php:apache-8.5.0
 
 # Access container
 docker exec -it <container_id> bash
@@ -39,20 +39,20 @@ docker exec -it <container_id> bash
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:fpm-8.5.0
+docker pull ephect/dev-php:fpm-8.5.0
 
 # Start with nginx
-docker run -d -p 9000:9000 -v $(pwd):/var/www/html localhost:5000/dev-php:fpm-8.5.0
+docker run -d -p 9000:9000 -v $(pwd):/var/www/html ephect/dev-php:fpm-8.5.0
 ```
 
 ### ZTS (Zend Thread Safety)
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:zts-8.5.0
+docker pull ephect/dev-php:zts-8.5.0
 
 # Start a container
-docker run -it --rm localhost:5000/dev-php:zts-8.5.0 bash
+docker run -it --rm ephect/dev-php:zts-8.5.0 bash
 ```
 
 ---
@@ -94,7 +94,7 @@ docker run -it --rm localhost:5000/dev-php:zts-8.5.0 bash
 
 #### PHP 8.5.0 - apache
 
-**Tag:** `localhost:5000/dev-php:apache-8.5.0`  
+**Tag:** `ephect/dev-php:apache-8.5.0`  
 **Size:** 1.57GB  
 **Image ID:** 71e2fb19fa43
 
@@ -164,7 +164,7 @@ Zend OPcache
 
 #### PHP 8.4.15 - apache
 
-**Tag:** `localhost:5000/dev-php:apache-8.4.15`  
+**Tag:** `ephect/dev-php:apache-8.4.15`  
 **Size:** 1.55GB  
 **Image ID:** 0e50fc424d4e
 
@@ -234,7 +234,7 @@ Zend OPcache
 
 #### PHP 8.3.28 - apache
 
-**Tag:** `localhost:5000/dev-php:apache-8.3.28`  
+**Tag:** `ephect/dev-php:apache-8.3.28`  
 **Size:** 1.54GB  
 **Image ID:** 636b8870e589
 
@@ -304,7 +304,7 @@ Zend OPcache
 
 #### PHP 8.2.29 - apache
 
-**Tag:** `localhost:5000/dev-php:apache-8.2.29`  
+**Tag:** `ephect/dev-php:apache-8.2.29`  
 **Size:** 1.53GB  
 **Image ID:** 730576edafed
 
@@ -374,7 +374,7 @@ Zend OPcache
 
 #### PHP 8.1.33 - apache
 
-**Tag:** `localhost:5000/dev-php:apache-8.1.33`  
+**Tag:** `ephect/dev-php:apache-8.1.33`  
 **Size:** 1.53GB  
 **Image ID:** 812d1e25b65b
 
@@ -458,4 +458,9 @@ These images are designed for **development** as Xdebug is enabled by default.
 
 I prepared a script called `rocker` (Registry for Docker) to easily create and manage a local Docker registry on your machine. This is useful for testing and development purposes.
 
-See the [Rocker README](./registry/README.md) for detailed instructions on usage and configuration.
+See the [Rocker README](https://github.com/ephect-io/docker-image/blob/main/registry/README.md) for detailed instructions on usage and configuration.
+## 🐳 Devcontainer setup
+
+I prepared devcontainer configurations for Apache and Nginx/FPM to easily set up a development environment.
+
+See the [Devcontainer README](https://github.com/ephect-io/docker-image/blob/main/devcontainer/README.md) for detailed instructions on usage and configuration.
