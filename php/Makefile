@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 ARCH = $(shell uname -m)
 version ?= 8.5.0
 package ?= apache
@@ -22,13 +23,13 @@ push-remote:
 	docker tag $(TAG) $(REMOTE_TAG)
 	docker push $(REMOTE_TAG)
 
-log:
-	@echo "Generating README with build log..."
-	cd .. && ./bin/log.sh $(package) $(version)
+overview:
+	@echo "Generating DockerHub repository overview..."
+	cd .. && ./bin/make-overview.sh $(package) $(version)
 
-describe-build:
-	@echo "Updating the build description..."
-	cd .. && ./bin/describe-build.sh $(repo) $(package)
+publish:
+	@echo "Updating the repository overview..."
+	cd .. && ./bin/publish-overview.sh $(repo) $(package)
 
 show:
 	@echo "Show build command on $(ARCH) architecture:"
@@ -40,8 +41,8 @@ help:
 	@echo "Possible commands are:"
 	@echo " - build: build the dev image for the given version and detected architecture,"
 	@echo " - push: push the dev image on DockerHub,"
-	@echo " - log: generate README.md with build log,"
-	@echo " - update-hub-description: update Docker Hub repository description with README.md."
+	@echo " - overview: generate DockerHub repository overview for one package/version,"
+	@echo " - publish: update Docker Hub repository overview with README.md."
 	@echo
 	@echo "Possible package are:"
 	@echo " - apache, fpm, zts."
@@ -51,7 +52,7 @@ help:
 	@echo
 	@echo "Example:"
 	@echo "  make build package=apache version=8.2.27"
-	@echo "  make log package=apache version=8.5.0"
-	@echo "  make update-hub-description repo=ephectio/dev-php package=apache"
+	@echo "  make overview packages=apache,fpm versions=8.4.15,8.5.0"
+	@echo "  make publish repo=ephectio/dev-php package=apache"
 
-.PHONY: default help log update-hub-description
+.PHONY: default help log overview publish
