@@ -14,7 +14,8 @@ cd php
 PACKAGES_ARG=${1:-apache}
 VERSIONS_ARG=${2:-8.5.0}
 ARCH=$(uname -m)
-REPO="localhost:5000/dev-php"
+ROCKER=${ROCKER:-localhost:5000}
+REPO="${ROCKER}/dev-php"
 
 # Convert arguments to arrays
 IFS=',' read -ra PACKAGES <<< "$PACKAGES_ARG"
@@ -58,7 +59,7 @@ process_image() {
     local PACKAGE=$1
     local VERSION=$2
     local TAG="${REPO}:${PACKAGE}-${VERSION}"
-    local PULL_CMD="docker pull localhost:5000/dev-php:${PACKAGE}-${VERSION}"
+    local PULL_CMD="docker pull ${REPO}:${PACKAGE}-${VERSION}"
     
     echo ""
     echo "📝 Processing: ${PACKAGE} ${VERSION}"
@@ -189,7 +190,7 @@ EOF
 
 #### PHP ${VER} - ${PKG}
 
-**Tag:** \`localhost:5000/dev-php:${PKG}-${VER}\`  
+**Tag:** \`${REPO}:${PKG}-${VER}\`  
 **Size:** ${SIZE}  
 **Image ID:** ${ID}
 
@@ -242,18 +243,7 @@ cat >> "${SUMMARY_FILE}" << 'EOF'
 
 ## 📝 Notes
 
-- These images are designed for **development** only
-- Xdebug is enabled by default (disable it in production)
-- Images are multi-architecture (amd64, arm64)
-- Node.js is installed via NVM for user `salamandra`
-
-## 🆘 Support
-
-To report an issue or contribute, visit the project's GitHub repository.
-
----
-
-**Automatically generated** - Do not edit manually
+These images are designed for **development** as Xdebug is enabled by default.
 
 EOF
 
@@ -264,3 +254,4 @@ echo "📊 Docker Hub summary: ${SUMMARY_FILE}"
 echo "========================================="
 
 cp "${SUMMARY_FILE}" ../README.md
+cat ../registry/README_MORE.md >> ../README.md
