@@ -2,7 +2,7 @@
 
 Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebug, Composer, NVM and Node.js LTS.
 
-**Last update:** 2025-11-30 20:32:58  
+**Last update:** 2025-11-30 21:36:22  
 **Architecture:** x86_64  
 **Registry:** [ephect/dev-php](https://hub.docker.com/r/ephect/dev-php)
 
@@ -103,7 +103,7 @@ docker run -it --rm localhost:5000/dev-php:zts-8.5.0 bash
 ✅ User setup
 ✅ PHP configuration
 ❌ Xdebug
-✅ System packages
+✅ Dev tools
 ✅ Zip extension
 ✅ Composer
 ✅ NVM and Node.js
@@ -173,7 +173,7 @@ Zend OPcache
 ✅ User setup
 ✅ PHP configuration
 ✅ Xdebug
-✅ System packages
+✅ Dev tools
 ✅ Zip extension
 ✅ Composer
 ✅ NVM and Node.js
@@ -243,7 +243,7 @@ Zend OPcache
 ✅ User setup
 ✅ PHP configuration
 ✅ Xdebug
-✅ System packages
+✅ Dev tools
 ✅ Zip extension
 ✅ Composer
 ✅ NVM and Node.js
@@ -313,7 +313,7 @@ Zend OPcache
 ✅ User setup
 ✅ PHP configuration
 ✅ Xdebug
-✅ System packages
+✅ Dev tools
 ✅ Zip extension
 ✅ Composer
 ✅ NVM and Node.js
@@ -383,7 +383,7 @@ Zend OPcache
 ✅ User setup
 ✅ PHP configuration
 ✅ Xdebug
-✅ System packages
+✅ Dev tools
 ✅ Zip extension
 ✅ Composer
 ✅ NVM and Node.js
@@ -452,16 +452,10 @@ Zend OPcache
 
 ## 📝 Notes
 
-- These images are designed for **development** only
-- Xdebug is enabled by default (disable it in production)
-- Images are multi-architecture (amd64, arm64)
-- Node.js is installed via NVM for user `salamandra`
+These images are designed for **development** as Xdebug is enabled by default.
 
-## 🆘 Support
+## 🐳 Local Docker Registry
 
-To report an issue or contribute, visit the project's GitHub repository.
+I prepared a script called `rocker` (Registry for Docker) to easily create and manage a local Docker registry on your machine. This is useful for testing and development purposes.
 
----
-
-**Automatically generated** - Do not edit manually
-
+See the [Rocker README](./registry/README.md) for detailed instructions on usage and configuration.
