@@ -262,3 +262,5 @@ echo "========================================="
 echo "✅ Process completed"
 echo "📊 Docker Hub summary: ${SUMMARY_FILE}"
 echo "========================================="
+
+cp "${SUMMARY_FILE}" ../README.md
