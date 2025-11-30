@@ -16,6 +16,7 @@ VERSIONS_ARG=${2:-8.5.0}
 ARCH=$(uname -m)
 ROCKER=${ROCKER:-localhost:5000}
 REPO="${ROCKER}/dev-php"
+PUBLISH_REPO="ephect/dev-php"
 
 # Convert arguments to arrays
 IFS=',' read -ra PACKAGES <<< "$PACKAGES_ARG"
@@ -59,7 +60,7 @@ process_image() {
     local PACKAGE=$1
     local VERSION=$2
     local TAG="${REPO}:${PACKAGE}-${VERSION}"
-    local PULL_CMD="docker pull ${REPO}:${PACKAGE}-${VERSION}"
+    local PULL_CMD="docker pull ${PUBLISH_REPO}:${PACKAGE}-${VERSION}"
     
     echo ""
     echo "📝 Processing: ${PACKAGE} ${VERSION}"
@@ -190,7 +191,7 @@ EOF
 
 #### PHP ${VER} - ${PKG}
 
-**Tag:** \`${REPO}:${PKG}-${VER}\`  
+**Tag:** \`${PUBLISH_REPO}:${PKG}-${VER}\`  
 **Size:** ${SIZE}  
 **Image ID:** ${ID}
 
@@ -253,6 +254,6 @@ echo "✅ Process completed"
 echo "📊 Docker Hub summary: ${SUMMARY_FILE}"
 echo "========================================="
 
+cat ../registry/more_info.md >> ${SUMMARY_FILE}
+cat ../devcontainer/more_info.md >> ${SUMMARY_FILE}
 cp "${SUMMARY_FILE}" ../README.md
-cat ../registry/more_info.md >> ../README.md
-cat ../devcontainer/more_info.md >> ../README.md

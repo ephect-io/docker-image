@@ -2,7 +2,7 @@
 
 Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebug, Composer, NVM and Node.js LTS.
 
-**Last update:** 2025-11-30 22:50:29  
+**Last update:** 2025-11-30 23:06:49  
 **Architecture:** x86_64  
 **Registry:** [ephect/dev-php](https://hub.docker.com/r/ephect/dev-php)
 
@@ -243,7 +243,7 @@ Zend OPcache
 ✅ User setup
 ✅ PHP configuration
 ✅ Xdebug
-✅ Dev tools
+✅ System packages
 ✅ Zip extension
 ✅ Composer
 ✅ NVM and Node.js
