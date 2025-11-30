@@ -1,0 +1,7 @@
+services:
+  php-apache:
+    build: ./docker
+    ports:
+     - '8888:80'
+    volumes:
+     - .:/var/www/html

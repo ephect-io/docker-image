@@ -1,9 +1,0 @@
-services:
-  ephect:
-    build: ./docker
-    image: myimage:latest
-    ports:
-     - '8883:443'
-     - '8888:8888'
-    volumes:
-     - .:/Sites
