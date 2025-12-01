@@ -12,7 +12,7 @@ This directory contains the configuration files for setting up a development con
 
 1. **Set Up the Repository:**
 
-    Copy all stuff in `devcontainer/(apache|fpm)/repo-root` directory to your project root and customize as needed by replacing `myapp` with your project name.
+    Copy all stuff in `apache/repo-root` or `fpm/repo-root` directory to your project root and customize as needed by replacing `myapp` with your project name.
 
 2. **Open in VS Code:**
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Docker Hub documentation generation script
-# Usage: ./log.sh [package1,package2,...] [version1,version2,...]
-# Example: ./log.sh apache,fpm 8.4.15,8.5.0
+# Usage: ./make-overview.sh [package1,package2,...] [version1,version2,...]
+# Example: ./make-overview.sh apache,fpm 8.4.15,8.5.0
 
 # Save current directory and return at the end
 SCRIPT_DIR=$(pwd)
@@ -16,6 +16,7 @@ VERSIONS_ARG=${2:-8.5.0}
 ARCH=$(uname -m)
 ROCKER=${ROCKER:-localhost:5000}
 REPO="${ROCKER}/dev-php"
+PUBLISH_REPO="ephect/dev-php"
 
 # Convert arguments to arrays
 IFS=',' read -ra PACKAGES <<< "$PACKAGES_ARG"
@@ -59,7 +60,7 @@ process_image() {
     local PACKAGE=$1
     local VERSION=$2
     local TAG="${REPO}:${PACKAGE}-${VERSION}"
-    local PULL_CMD="docker pull ${REPO}:${PACKAGE}-${VERSION}"
+    local PULL_CMD="docker pull ${PUBLISH_REPO}:${PACKAGE}-${VERSION}"
     
     echo ""
     echo "📝 Processing: ${PACKAGE} ${VERSION}"
@@ -86,10 +87,19 @@ process_image() {
     return 0
 }
 
+# Track which packages have available versions
+declare -A PACKAGE_HAS_VERSIONS
+
 # Process each package/version combination
 for PACKAGE in "${PACKAGES[@]}"; do
+    PACKAGE_HAS_VERSIONS["${PACKAGE}"]=0
     for VERSION in "${VERSIONS[@]}"; do
-        process_image "$PACKAGE" "$VERSION"
+        process_image "${PACKAGE}" "${VERSION}"
+        # Check if this version was successfully processed
+        KEY="${PACKAGE}-${VERSION}"
+        if [[ -n "${IMAGE_DETAILS[$KEY]}" ]]; then
+            PACKAGE_HAS_VERSIONS["${PACKAGE}"]=1
+        fi
     done
 done
 
@@ -104,10 +114,10 @@ cat >> "${SUMMARY_FILE}" << 'EOF'
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:apache-8.5.0
+docker pull ephect/dev-php:apache-8.5.0
 
 # Start a container
-docker run -d -p 8080:80 -v $(pwd):/var/www/html localhost:5000/dev-php:apache-8.5.0
+docker run -d -p 8080:80 -v $(pwd):/var/www/html ephect/dev-php:apache-8.5.0
 
 # Access container
 docker exec -it <container_id> bash
@@ -117,20 +127,20 @@ docker exec -it <container_id> bash
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:fpm-8.5.0
+docker pull ephect/dev-php:fpm-8.5.0
 
 # Start with nginx
-docker run -d -p 9000:9000 -v $(pwd):/var/www/html localhost:5000/dev-php:fpm-8.5.0
+docker run -d -p 9000:9000 -v $(pwd):/var/www/html ephect/dev-php:fpm-8.5.0
 ```
 
 ### ZTS (Zend Thread Safety)
 
 ```bash
 # Pull image
-docker pull localhost:5000/dev-php:zts-8.5.0
+docker pull ephect/dev-php:zts-8.5.0
 
 # Start a container
-docker run -it --rm localhost:5000/dev-php:zts-8.5.0 bash
+docker run -it --rm ephect/dev-php:zts-8.5.0 bash
 ```
 
 ---
@@ -176,6 +186,15 @@ for PACKAGE in "${PACKAGES[@]}"; do
 
 EOF
     
+    # Check if this package has any available versions
+    if [[ "${PACKAGE_HAS_VERSIONS[$PACKAGE]}" -eq 0 ]]; then
+        cat >> "${SUMMARY_FILE}" << EOF
+No ${PACKAGE} images are currently available.
+
+EOF
+        continue
+    fi
+    
     for VERSION in "${VERSIONS[@]}"; do
         KEY="${PACKAGE}-${VERSION}"
         if [[ -v IMAGE_DETAILS[$KEY] ]]; then
@@ -190,7 +209,7 @@ EOF
 
 #### PHP ${VER} - ${PKG}
 
-**Tag:** \`${REPO}:${PKG}-${VER}\`  
+**Tag:** \`${PUBLISH_REPO}:${PKG}-${VER}\`  
 **Size:** ${SIZE}  
 **Image ID:** ${ID}
 
@@ -217,7 +236,7 @@ PKGEOF
 
 ```
 PKGEOF
-            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not available" >> "${SUMMARY_FILE}"
+            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not yet available" >> "${SUMMARY_FILE}"
             cat >> "${SUMMARY_FILE}" << 'PKGEOF'
 ```
 
@@ -253,5 +272,6 @@ echo "✅ Process completed"
 echo "📊 Docker Hub summary: ${SUMMARY_FILE}"
 echo "========================================="
 
+cat ../registry/more_info.md >> ${SUMMARY_FILE}
+cat ../devcontainer/more_info.md >> ${SUMMARY_FILE}
 cp "${SUMMARY_FILE}" ../README.md
-cat ../registry/README_MORE.md >> ../README.md
