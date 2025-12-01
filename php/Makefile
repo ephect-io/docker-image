@@ -34,7 +34,7 @@ overview:
 
 publish:
 	@echo "Updating the repository overview..."
-	cd .. && ./bin/publish-overview.sh $(repo) $(package)
+	cd .. && ./bin/publish-overview.sh
 
 show:
 	@echo "Show build command on $(ARCH) architecture:"
@@ -58,6 +58,6 @@ help:
 	@echo "Example:"
 	@echo "  make build package=apache version=8.2.27"
 	@echo "  make overview packages=apache,fpm versions=8.4.15,8.5.0"
-	@echo "  make publish repo=ephectio/dev-php package=apache"
+	@echo "  make publish"
 
-.PHONY: default help log overview publish
+.PHONY: default help overview publish
