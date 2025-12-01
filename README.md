@@ -2,7 +2,7 @@
 
 Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebug, Composer, NVM and Node.js LTS.
 
-**Last update:** 2025-11-30 23:06:49  
+**Last update:** 2025-12-01 03:09:09  
 **Architecture:** x86_64  
 **Registry:** [ephect/dev-php](https://hub.docker.com/r/ephect/dev-php)
 
@@ -17,6 +17,16 @@ Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebu
 | **apache** | 8.3.28 | `docker pull ephect/dev-php:apache-8.3.28` | 1.54GB | ✅ Available |
 | **apache** | 8.2.29 | `docker pull ephect/dev-php:apache-8.2.29` | 1.53GB | ✅ Available |
 | **apache** | 8.1.33 | `docker pull ephect/dev-php:apache-8.1.33` | 1.53GB | ✅ Available |
+| **fpm** | 8.5.0 | `docker pull ephect/dev-php:fpm-8.5.0` | - | ❌ Not available |
+| **fpm** | 8.4.15 | `docker pull ephect/dev-php:fpm-8.4.15` | - | ❌ Not available |
+| **fpm** | 8.3.28 | `docker pull ephect/dev-php:fpm-8.3.28` | - | ❌ Not available |
+| **fpm** | 8.2.29 | `docker pull ephect/dev-php:fpm-8.2.29` | - | ❌ Not available |
+| **fpm** | 8.1.33 | `docker pull ephect/dev-php:fpm-8.1.33` | - | ❌ Not available |
+| **zts** | 8.5.0 | `docker pull ephect/dev-php:zts-8.5.0` | - | ❌ Not available |
+| **zts** | 8.4.15 | `docker pull ephect/dev-php:zts-8.4.15` | - | ❌ Not available |
+| **zts** | 8.3.28 | `docker pull ephect/dev-php:zts-8.3.28` | - | ❌ Not available |
+| **zts** | 8.2.29 | `docker pull ephect/dev-php:zts-8.2.29` | - | ❌ Not available |
+| **zts** | 8.1.33 | `docker pull ephect/dev-php:zts-8.1.33` | - | ❌ Not available |
 
 ---
 
