@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Docker Hub documentation generation script
-# Usage: ./log.sh [package1,package2,...] [version1,version2,...]
-# Example: ./log.sh apache,fpm 8.4.15,8.5.0
+# Usage: ./make-overview.sh [package1,package2,...] [version1,version2,...]
+# Example: ./make-overview.sh apache,fpm 8.4.15,8.5.0
 
 # Save current directory and return at the end
 SCRIPT_DIR=$(pwd)
@@ -87,10 +87,19 @@ process_image() {
     return 0
 }
 
+# Track which packages have available versions
+declare -A PACKAGE_HAS_VERSIONS
+
 # Process each package/version combination
 for PACKAGE in "${PACKAGES[@]}"; do
+    PACKAGE_HAS_VERSIONS["${PACKAGE}"]=0
     for VERSION in "${VERSIONS[@]}"; do
-        process_image "$PACKAGE" "$VERSION"
+        process_image "${PACKAGE}" "${VERSION}"
+        # Check if this version was successfully processed
+        KEY="${PACKAGE}-${VERSION}"
+        if [[ -n "${IMAGE_DETAILS[$KEY]}" ]]; then
+            PACKAGE_HAS_VERSIONS["${PACKAGE}"]=1
+        fi
     done
 done
 
@@ -177,6 +186,15 @@ for PACKAGE in "${PACKAGES[@]}"; do
 
 EOF
     
+    # Check if this package has any available versions
+    if [[ "${PACKAGE_HAS_VERSIONS[$PACKAGE]}" -eq 0 ]]; then
+        cat >> "${SUMMARY_FILE}" << EOF
+No ${PACKAGE} images are currently available.
+
+EOF
+        continue
+    fi
+    
     for VERSION in "${VERSIONS[@]}"; do
         KEY="${PACKAGE}-${VERSION}"
         if [[ -v IMAGE_DETAILS[$KEY] ]]; then
@@ -218,7 +236,7 @@ PKGEOF
 
 ```
 PKGEOF
-            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not available" >> "${SUMMARY_FILE}"
+            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not yet available" >> "${SUMMARY_FILE}"
             cat >> "${SUMMARY_FILE}" << 'PKGEOF'
 ```
 
