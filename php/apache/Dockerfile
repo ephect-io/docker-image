@@ -90,6 +90,9 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | b
     echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> "${BASH_ENV}" && \
     source "${BASH_ENV}" && \
     nvm install --lts && \
+    nvm install corepack && \
+    corepack enable && \
+    corpack prepare yarn@latest --activate && \
     sudo bash -c "echo '$SUCCESS $STEP' >> $LOG_FILE" || (sudo bash -c "echo '$FAILURE $STEP' >> $LOG_FILE" && exit 1)
 SHELL ["/bin/sh", "-c"]
 
