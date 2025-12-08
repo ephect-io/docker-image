@@ -1,12 +1,36 @@
 services:
-  php:
-    build: ./docker
+services:
+  myapp-dev:
+    profiles: ["dev"]
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_ENV: development
+    image: myapp:dev
+    container_name: myapp-dev
+    command: ["post-up"]
     ports:
-     - '8888:80'
-    networks:
-      - myapp-network     
+     - "8080:8080"
     volumes:
-     - .:/var/www/html
+      - .:/var/www/html:Z
+    start: unless-stopped
+
+  myapp-prod:
+    profiles: ["prod"]
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_ENV: production
+    image: myapp:prod
+    container_name: myapp-prod
+    command: ["post-up"]
+    ports:
+     - "8080:8080"
+    environment:
+      - APP_ENV=production
+    restart: unless-stopped
 
   nginx:
     image: nginx:stable-alpine
