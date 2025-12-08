@@ -108,7 +108,7 @@ if [ "$PREPARE" == "true" ]; then
     docker buildx inspect --bootstrap
     echo "✅ Build environment prepared."
     exit 0
-}
+fi
 
 echo "🚀 Building ${PACKAGE} version ${VERSION} for architecture ${ARCH} with tag ${TAG}"
 

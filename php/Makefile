@@ -13,7 +13,7 @@ default: help
 # Example of using architecture-specific logic
 build:
 	@echo "Building for linux/amd64 and linux/arm64/v8 architectures"
-	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --full=true
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --full
 
 local:
 	@echo "Building for $(ARCH) architecture"
@@ -21,7 +21,7 @@ local:
 
 prepare:
 	@echo "Building for $(ARCH) architecture"
-	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --prepare=true
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --prepare
 
 push:
 	@echo "Pushing the image on remote DockerHub repository"
