@@ -12,14 +12,18 @@ default: help
 
 # Example of using architecture-specific logic
 build:
-	@echo "Building on $(ARCH) architecture"
-	docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(package) --build-arg VERSION=$(version) -t $(TAG) --push
+	@echo "Building for linux/amd64 and linux/arm64/v8 architectures"
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --full=true
+
+local:
+	@echo "Building for $(ARCH) architecture"
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version)
+
+prepare:
+	@echo "Building for $(ARCH) architecture"
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --prepare=true
 
 push:
-	@echo "Pushing the image on DockerHub"
-	docker push $(TAG)
-
-push-remote:
 	@echo "Pushing the image on remote DockerHub repository"
 	docker tag $(TAG) $(REMOTE_TAG)
 	docker push $(REMOTE_TAG)
@@ -30,21 +34,22 @@ overview:
 		echo "❌ Error: You must specify packages=apache,fpm and versions=8.4.15,8.5.0"; \
 		exit 1; \
 	fi
-	cd .. && ./bin/make-overview.sh $(packages) $(versions)
+	cd .. && ./bin/make-overview.sh --packages=$(packages) --versions=$(versions)
 
 publish:
 	@echo "Updating the repository overview..."
 	cd .. && ./bin/publish-overview.sh
 
 show:
-	@echo "Show build command on $(ARCH) architecture:"
+	@echo "Show build command for linux/amd64 and linux/arm64/v8 architectures:"
 	@echo "> docker buildx build --platform linux/amd64,linux/arm64/v8 ./$(package) --build-arg VERSION=$(version) -t $(TAG) --push"
 
 help:
 	@echo "make <command> <package> <argument>"
 	@echo
 	@echo "Possible commands are:"
-	@echo " - build: build the dev image for the given version and detected architecture,"
+	@echo " - prepare: build the dev image for the given version and local architecture without pushing in local registry,"
+	@echo " - build: build the dev image for the given version for all architectures and push in prepare registry,"
 	@echo " - push: push the dev image on DockerHub,"
 	@echo " - overview: generate DockerHub repository overview for one package/version,"
 	@echo " - publish: update Docker Hub repository overview with README.md."
@@ -60,4 +65,4 @@ help:
 	@echo "  make overview packages=apache,fpm versions=8.4.15,8.5.0"
 	@echo "  make publish"
 
-.PHONY: default help overview publish
+.PHONY: default prepare build push show help overview publish

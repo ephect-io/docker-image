@@ -43,7 +43,7 @@ then
         echo "Registry container already exists. Use 'start' to start it or 'destroy' to remove it first."
         exit 1
     fi
-	docker run -d -p $ROCKER_PORT:$ROCKER_PORT --name registry registry:latest
+	docker run -d -p $ROCKER_PORT:5000 --name registry registry:latest
 fi
 
 if [ "$CMD" = "destroy" ]

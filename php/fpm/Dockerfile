@@ -82,11 +82,13 @@ USER $USERNAME
 # NVM
 ENV STEP="NVM and Node.js"
 SHELL ["/bin/bash", "-c"]
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
-    echo 'export NVM_DIR="$HOME/.nvm"' >> "${BASH_ENV}" && \
-    echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> "${BASH_ENV}" && \
-    source "${BASH_ENV}" && \
+RUN export NVM_DIR="$HOME/.nvm" && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     nvm install --lts && \
+    nvm install corepack && \
+    corepack enable && \
+    corpack prepare yarn@latest --activate && \
     sudo bash -c "echo '$SUCCESS $STEP' >> $LOG_FILE" || (sudo bash -c "echo '$FAILURE $STEP' >> $LOG_FILE" && exit 1)
 SHELL ["/bin/sh", "-c"]
 

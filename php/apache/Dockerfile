@@ -20,7 +20,6 @@ ENV LOG_FILE="/tmp/build-log.md"
 # Create build log
 RUN touch ${LOG_FILE}
 
-
 # Base user setup (critique)
 ENV STEP="User setup"
 RUN (apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -32,6 +31,7 @@ RUN (apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && usermod -aG www-data ${USERNAME} \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+
 # PHP configuration
 ENV STEP="PHP configuration"
 RUN (echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
@@ -76,6 +76,11 @@ RUN (curl -sSL https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
+# Enable rewrite module
+ENV STEP="Apache rewrite module"
+RUN (a2enmod rewrite \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+
 USER $USERNAME
 
 # NVM
@@ -90,6 +95,9 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | b
     echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> "${BASH_ENV}" && \
     source "${BASH_ENV}" && \
     nvm install --lts && \
+    nvm install corepack && \
+    corepack enable && \
+    corpack prepare yarn@latest --activate && \
     sudo bash -c "echo '$SUCCESS $STEP' >> $LOG_FILE" || (sudo bash -c "echo '$FAILURE $STEP' >> $LOG_FILE" && exit 1)
 SHELL ["/bin/sh", "-c"]
 

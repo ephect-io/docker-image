@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Docker Hub documentation generation script
-# Usage: ./make-overview.sh [package1,package2,...] [version1,version2,...]
-# Example: ./make-overview.sh apache,fpm 8.4.15,8.5.0
+# Usage: ./make-overview.sh --packages=apache,fpm --versions=8.4.15,8.5.0
+# Example: ./make-overview.sh --packages=apache --versions=8.5.0
 
 # Save current directory and return at the end
 SCRIPT_DIR=$(pwd)
@@ -11,11 +11,46 @@ trap 'cd "$SCRIPT_DIR"' EXIT
 cd php
 
 # Parameters with default values
-PACKAGES_ARG=${1:-apache}
-VERSIONS_ARG=${2:-8.5.0}
+PACKAGES_ARG="apache"
+VERSIONS_ARG="8.5.0"
+
+# Parse named arguments
+for arg in "$@"; do
+    case $arg in
+        --packages=*)
+            PACKAGES_ARG="${arg#*=}"
+            shift
+            ;;
+        --versions=*)
+            VERSIONS_ARG="${arg#*=}"
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --packages=PACKAGES    Comma-separated list of packages (default: apache)"
+            echo "                         Available: apache, fpm, zts"
+            echo "  --versions=VERSIONS    Comma-separated list of versions (default: 8.5.0)"
+            echo "  --help, -h            Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  $0 --packages=apache,fpm --versions=8.4.15,8.5.0"
+            echo "  $0 --packages=fpm --versions=8.5.0"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 ARCH=$(uname -m)
 ROCKER=${ROCKER:-localhost:5000}
 REPO="${ROCKER}/dev-php"
+REMOTE_REPO="ephect/dev-php"
 PUBLISH_REPO="ephect/dev-php"
 
 # Convert arguments to arrays
@@ -23,7 +58,8 @@ IFS=',' read -ra PACKAGES <<< "$PACKAGES_ARG"
 IFS=',' read -ra VERSIONS <<< "$VERSIONS_ARG"
 
 # Global summary file (for Docker Hub)
-SUMMARY_FILE="./DOCKER_HUB_README.md"
+OVERVIEW_FILE="../var/tmp/docker-hub-overview.md"
+SUMMARY_FILE="../var/log/build-summary"
 
 echo "========================================="
 echo "Generating Docker Hub summary for:"
@@ -31,15 +67,28 @@ echo "Packages: ${PACKAGES[*]}"
 echo "Versions: ${VERSIONS[*]}"
 echo "========================================="
 
+# Check if local registry is available
+echo ""
+echo "🔍 Checking local registry availability..."
+if curl -s http://${ROCKER}/v2/_catalog > /dev/null 2>&1; then
+    echo "✅ Local registry available at ${ROCKER}"
+    USE_LOCAL_REGISTRY=true
+else
+    echo "⚠️  Local registry not available at ${ROCKER}"
+    echo "   Using remote registry only: ${REMOTE_REPO}"
+    USE_LOCAL_REGISTRY=false
+fi
+echo ""
+
 # Initialize summary file
-cat > "${SUMMARY_FILE}" << 'EOF'
+cat > "${OVERVIEW_FILE}" << 'EOF'
 # 🐳 PHP Development Images
 
 Optimized PHP Docker images for development with Apache/FPM/ZTS, including Xdebug, Composer, NVM and Node.js LTS.
 
 EOF
 
-cat >> "${SUMMARY_FILE}" << EOF
+cat >> "${OVERVIEW_FILE}" << EOF
 **Last update:** $(date '+%Y-%m-%d %H:%M:%S')  
 **Architecture:** ${ARCH}  
 **Registry:** [ephect/dev-php](https://hub.docker.com/r/ephect/dev-php)
@@ -60,24 +109,50 @@ process_image() {
     local PACKAGE=$1
     local VERSION=$2
     local TAG="${REPO}:${PACKAGE}-${VERSION}"
+    local REMOTE_TAG="${REMOTE_REPO}:${PACKAGE}-${VERSION}"
     local PULL_CMD="docker pull ${PUBLISH_REPO}:${PACKAGE}-${VERSION}"
     
     echo ""
     echo "📝 Processing: ${PACKAGE} ${VERSION}"
     
-    # Pull image from local registry
-    echo "   📥 Pulling image..."
-    if ! docker pull ${TAG} 2>/dev/null; then
-        echo "   ⚠️  Image not available: ${TAG}"
-        echo "| **${PACKAGE}** | ${VERSION} | \`${PULL_CMD}\` | - | ❌ Not available |" >> "${SUMMARY_FILE}"
+    # Determine which registry to pull from
+    local PULL_TAG=${REMOTE_TAG}
+    if [[ "${USE_LOCAL_REGISTRY}" == "true" ]]; then
+        echo "   🔍 Checking local registry..."
+        if docker manifest inspect ${TAG} > /dev/null 2>&1; then
+            echo "   ✅ Using local registry"
+            PULL_TAG=${TAG}
+        else
+            echo "   ℹ️ Not in local registry, using remote"
+        fi
+    fi
+    
+    # Check if image exists without pulling
+    echo "   🔍 Checking if image exists..."
+    if ! docker manifest inspect ${REMOTE_TAG} > /dev/null 2>&1; then
+        echo "   ⚠️  Image not available: ${REMOTE_TAG}"
+        echo "| **${PACKAGE}** | ${VERSION} | \`${PULL_CMD}\` | - | ❌ Not yet available |" >> "${OVERVIEW_FILE}"
         return 1
+    fi
+    
+    # Pull image
+    echo "   📥 Pulling image from ${PULL_TAG}..."
+    if ! docker pull ${PULL_TAG} 2>/dev/null; then
+        echo "   ⚠️  Failed to pull image: ${PULL_TAG}"
+        echo "| **${PACKAGE}** | ${VERSION} | \`${PULL_CMD}\` | - | ❌ Pull failed |" >> "${OVERVIEW_FILE}"
+        return 1
+    fi
+    
+    # Tag as local if pulled from remote
+    if [[ "${PULL_TAG}" == "${REMOTE_TAG}" ]]; then
+        docker tag ${REMOTE_TAG} ${TAG} 2>/dev/null
     fi
     
     # Get image information
     local IMAGE_SIZE=$(docker images ${TAG} --format "{{.Size}}" 2>/dev/null)
     local IMAGE_ID=$(docker images ${TAG} --format "{{.ID}}" 2>/dev/null)
     
-    echo "| **${PACKAGE}** | ${VERSION} | \`${PULL_CMD}\` | ${IMAGE_SIZE} | ✅ Available |" >> "${SUMMARY_FILE}"
+    echo "| **${PACKAGE}** | ${VERSION} | \`${PULL_CMD}\` | ${IMAGE_SIZE} | ✅ Available |" >> "${OVERVIEW_FILE}"
     
     # Store details for detailed section
     local KEY="${PACKAGE}-${VERSION}"
@@ -104,7 +179,7 @@ for PACKAGE in "${PACKAGES[@]}"; do
 done
 
 # Add informative sections
-cat >> "${SUMMARY_FILE}" << 'EOF'
+cat >> "${OVERVIEW_FILE}" << 'EOF'
 
 ---
 
@@ -180,7 +255,7 @@ EOF
 
 # Add details for each image
 for PACKAGE in "${PACKAGES[@]}"; do
-    cat >> "${SUMMARY_FILE}" << EOF
+    cat >> "${OVERVIEW_FILE}" << EOF
 
 ### ${PACKAGE^^}
 
@@ -188,7 +263,7 @@ EOF
     
     # Check if this package has any available versions
     if [[ "${PACKAGE_HAS_VERSIONS[$PACKAGE]}" -eq 0 ]]; then
-        cat >> "${SUMMARY_FILE}" << EOF
+        cat >> "${OVERVIEW_FILE}" << EOF
 No ${PACKAGE} images are currently available.
 
 EOF
@@ -205,7 +280,7 @@ EOF
             SIZE="${DETAILS[3]}"
             ID="${DETAILS[4]}"
             
-            cat >> "${SUMMARY_FILE}" << PKGEOF
+            cat >> "${OVERVIEW_FILE}" << PKGEOF
 
 #### PHP ${VER} - ${PKG}
 
@@ -216,41 +291,26 @@ EOF
 **Build Log:**
 
 PKGEOF
-            
+            IMAGE_SUMMARY_FILE="${SUMMARY_FILE}-${PKG}-${VER}.md"
+
+
             # Extract log from container
             echo "   📋 Extracting build log for ${PKG} ${VER}..."
-            if docker run --rm ${TAG} cat /tmp/build-log.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+            if [ -f "${IMAGE_SUMMARY_FILE}" ]; then
+                cat "${IMAGE_SUMMARY_FILE}" >> "${OVERVIEW_FILE}"
                 echo "   ✅ Log extracted"
             else
-                echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
+                echo "⚠️  Build log not available" >> "${OVERVIEW_FILE}"
                 echo "   ⚠️  Log not available"
             fi
             
-            echo "" >> "${SUMMARY_FILE}"
-            
-            # Add PHP extensions
-            cat >> "${SUMMARY_FILE}" << 'PKGEOF'
-
-<details>
-<summary>📦 Installed PHP Extensions</summary>
-
-```
-PKGEOF
-            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not yet available" >> "${SUMMARY_FILE}"
-            cat >> "${SUMMARY_FILE}" << 'PKGEOF'
-```
-
-</details>
-
----
-
-PKGEOF
+       
         fi
     done
 done
 
 # Add footer section
-cat >> "${SUMMARY_FILE}" << 'EOF'
+cat >> "${OVERVIEW_FILE}" << 'EOF'
 
 ## 🔗 Useful Links
 
@@ -269,9 +329,9 @@ EOF
 echo ""
 echo "========================================="
 echo "✅ Process completed"
-echo "📊 Docker Hub summary: ${SUMMARY_FILE}"
+echo "📊 Docker Hub summary: ${OVERVIEW_FILE}"
 echo "========================================="
 
-cat ../registry/more_info.md >> ${SUMMARY_FILE}
-cat ../devcontainer/more_info.md >> ${SUMMARY_FILE}
-cp "${SUMMARY_FILE}" ../README.md
+cat ../registry/more_info.md >> ${OVERVIEW_FILE}
+cat ../devcontainer/more_info.md >> ${OVERVIEW_FILE}
+cp "${OVERVIEW_FILE}" ../README.md

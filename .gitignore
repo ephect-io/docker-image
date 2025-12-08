@@ -1,3 +1,10 @@
 .idea
 .vscode
-php/DOCKER_HUB_README.md
+var/tmp/*
+*.log
+*.cache
+*.env
+.DS_Store
+node_modules/
+*.swp
+*.swo

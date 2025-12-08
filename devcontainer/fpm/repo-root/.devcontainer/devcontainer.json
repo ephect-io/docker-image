@@ -1,28 +1,35 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.209.6/containers/php
 {
-    "name": "MyApp",
-    "dockerComposeFile": "../compose.yaml",
-    "workspaceFolder": "/var/www/html",
-    "service": "php-apache",
-    // Set *default* container specific settings.json values on container create.
-    "settings": {
-        "terminal.integrated.shell.linux": "/bin/zsh"
-    },
+	"name": "myapp",
+	"dockerComposeFile": "../compose.yaml",
+	"workspaceFolder": "/var/www/html",
+	"service": "myapp-dev",
+	"runServices": ["myapp-dev"],
+	
+	// Set *default* container specific settings.json values on container create.
+	"customizations": {
+		"vscode": {
+			"settings": { 
+				"terminal.integrated.shell.linux": "/bin/zsh"
+			},
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"xdebug.php-debug",
+				"bmewburn.vscode-intelephense-client",
+				"ms-azuretools.vscode-docker",
+				"mrmlnc.vscode-apache",
+				"GitHub.copilot-chat"
+			]
+		}
+	},
 
-    // Add the IDs of extensions you want installed when the container is created.
-    "extensions": [
-		"xdebug.php-debug",
-        "bmewburn.vscode-intelephense-client",
-        "mrmlnc.vscode-apache"
-    ],
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [8222],
 
-    // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    // "forwardPorts": [8222],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "sudo chmod a+x \"$(pwd)\" && sudo rm -rf /var/www/html && sudo ln -s \"$(pwd)\" /var/www/html"
 
-    // Use 'postCreateCommand' to run commands after the container is created.
-    // "postCreateCommand": "sudo chmod a+x \"$(pwd)\" && sudo rm -rf /var/www/html && sudo ln -s \"$(pwd)\" /var/www/html"
-
-    // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-    "remoteUser": "salamandra"
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "salamandra"
 }
