@@ -96,8 +96,21 @@ else
 fi
 
 if [ "$ALL_ARCH" == "true" ]; then
-    ARCH="linux/amd64,linux/arm64/v8"
+    PLATFORM="linux/amd64,linux/arm64/v8"
 else
+    # Convert architecture to Docker platform format
+    case "$ARCH" in
+        x86_64|amd64)
+            PLATFORM="linux/amd64"
+            ;;
+        arm64|aarch64)
+            PLATFORM="linux/arm64/v8"
+            ;;
+        *)
+            echo "❌ Unsupported architecture: $ARCH"
+            exit 1
+            ;;
+    esac
     TAG="${TAG}-${ARCH}"
 fi
 
@@ -109,14 +122,15 @@ if [ "$PREPARE" == "true" ]; then
     exit 0
 fi
 
-echo "🚀 Building ${PACKAGE} version ${VERSION} for architecture ${ARCH} with tag ${TAG}"
+echo "🚀 Building ${PACKAGE} version ${VERSION} for platform ${PLATFORM} with tag ${TAG}"
 
 # Get script directory and navigate to php folder
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHP_DIR="${SCRIPT_DIR}/../php"
 
 set -e
-docker buildx build --platform ${ARCH} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
+docker buildx use desktop-linux
+docker buildx build --platform ${PLATFORM} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
 
 SUMMARY_FILE="./var/log/build-summary-${PACKAGE}-${VERSION}.md"
 # Create or clear summary file
