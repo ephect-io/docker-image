@@ -28,8 +28,6 @@ LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.vendor="ephect"
 LABEL org.opencontainers.image.authors="David Blanchard"
 
-ENV SUCCESS="✅"
-ENV FAILURE="❌"
 ENV LOG_FILE="/tmp/build-log.md"
 
 # Create build log
@@ -49,7 +47,8 @@ FROM build-base AS build-zts
 ARG PHP_VERSION
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="/tmp/build-log.md"
+ENV STAGE="zts"
+ENV LOG_FILE="/tmp/build-log-stage-${STAGE}.md"
 
 WORKDIR /usr/src/php-${VERSION}
 
@@ -110,6 +109,22 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     && rm -rf /tmp/pear \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
+# Install parallel
+ENV STEP="Parallel extension"
+RUN (curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
+    && unzip develop.zip \
+    && cd parallel-develop \
+    && sed -E "s/ZEND_TYPE_HAS_CLASS/ZEND_TYPE_IS_COMPLEX/" -i src/check.c \
+    && phpize \
+    && ./configure --enable-parallel \
+    && make \
+    && make install \
+	&& cd .. \
+	&& rm develop.zip \
+	&& rm -rf parallel-develop \
+    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+
 # PHP configuration
 ENV STEP="PHP configuration"
 RUN (echo "display_startup_errors = Off" > /usr/local/etc/php/zts/php.ini \
@@ -134,7 +149,8 @@ FROM build-base AS build-nts
 ARG VERSION
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="/tmp/build-log.md"
+ENV STAGE="nts"
+ENV LOG_FILE="/tmp/build-log-stage-${STAGE}.md"
 
 WORKDIR /usr/src/php-${VERSION}
 
@@ -224,7 +240,8 @@ ARG USER_GID=$USER_UID
 # Define build log variables
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="/tmp/build-log.md"
+ENV STAGE="final"
+ENV LOG_FILE="/tmp/build-log-stage-${STAGE}.md"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

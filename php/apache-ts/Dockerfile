@@ -28,8 +28,6 @@ LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.vendor="ephect"
 LABEL org.opencontainers.image.authors="David Blanchard"
 
-ENV SUCCESS="✅"
-ENV FAILURE="❌"
 ENV LOG_FILE="/tmp/build-log.md"
 
 # Create build log
@@ -49,7 +47,8 @@ FROM build-base AS build-zts
 ARG VERSION
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="/tmp/build-log.md"
+ENV STAGE="zts"
+ENV LOG_FILE="/tmp/build-log-stage-${STAGE}.md"
 
 WORKDIR /usr/src/php-${VERSION}
 
@@ -92,7 +91,7 @@ RUN ./configure \
     && make -j$(nproc) && make install
 
 # Xdebug
-ENV STEP="Xdebug"
+ENV STEP="Xdebug extension"
 RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     cd /usr/src/xdebug && \
     /usr/local/zts/bin/phpize && \
@@ -108,6 +107,22 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     && echo "xdebug.log=/dev/stdout" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
     && echo "xdebug.log_level=0" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
     && rm -rf /tmp/pear \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+
+# Install parallel
+ENV STEP="Parallel extension"
+RUN (curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.zip \
+    && unzip develop.zip \
+    && cd parallel-develop \
+    && sed -E "s/ZEND_TYPE_HAS_CLASS/ZEND_TYPE_IS_COMPLEX/" -i src/check.c \
+    && phpize \
+    && ./configure --enable-parallel \
+    && make \
+    && make install \
+	&& cd .. \
+	&& rm develop.zip \
+	&& rm -rf parallel-develop \
+    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
 # PHP configuration
@@ -134,7 +149,8 @@ FROM build-base AS build-apache
 ARG VERSION
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="/tmp/build-log.md"
+ENV STAGE="nts"
+ENV LOG_FILE="/tmp/build-log-stage-${STAGE}.md"
 
 # Install Apache and development files
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -228,13 +244,17 @@ ARG USER_GID=$USER_UID
 # Define build log variables
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
-ENV LOG_FILE="/tmp/build-log.md"
+ENV STAGE="final"
+ENV LOG_FILE="/tmp/build-log-stage-${STAGE}.md"
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxml2 libssl3 libsqlite3-0 libcurl4 libonig5 libzip4 libpq5 \
-    libsodium23 libreadline8 libbz2-1.0 libgmp10 \
-    apache2 libapr1 libaprutil1 \
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libxml2 libssl3t64 libsqlite3-0 libcurl4t64 libonig5 libzip4 libpq5 \
+    libsodium23 libreadline8t64 libbz2-1.0 libgmp10 \
+    apache2 libapr1t64 libaprutil1t64 \
     curl ca-certificates sudo \
     && rm -rf /var/lib/apt/lists/*
 

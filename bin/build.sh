@@ -132,6 +132,27 @@ else
     echo "   ⚠️  Log not available"
 fi
 
+if docker run --rm ${TAG} cat /tmp/build-log-stage-nts.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+    echo "   ✅ Log extracted"
+else
+    echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
+    echo "   ⚠️  Log not available"
+fi
+
+if docker run --rm ${TAG} cat /tmp/build-log-stage-zts.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+    echo "   ✅ Log extracted"
+else
+    echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
+    echo "   ⚠️  Log not available"
+fi
+
+if docker run --rm ${TAG} cat /tmp/build-log-stage-final.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+    echo "   ✅ Log extracted"
+else
+    echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
+    echo "   ⚠️  Log not available"
+fi
+
 echo "" >> "${SUMMARY_FILE}"
     
 # Add PHP extensions
