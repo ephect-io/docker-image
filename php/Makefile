@@ -29,8 +29,8 @@ manifest:
 
 push:
 	@echo "Pushing the image on remote DockerHub repository"
-	docker tag $(TAG) $(REMOTE_TAG)
-	docker push $(REMOTE_TAG)
+	docker tag $(TAG)-$(ARCH) $(REMOTE_TAG)-$(ARCH)
+	docker push $(REMOTE_TAG)-$(ARCH)
 
 overview:
 	@echo "Generating README for all combinations..."

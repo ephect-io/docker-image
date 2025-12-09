@@ -7,7 +7,7 @@
 PACKAGE=""
 VERSION=""
 ALL_ARCH="false"
-ROCKER=${ROCKER:-localhost:5000}
+ROCKER=${ROCKER:-"docker.io/ephect"}
 
 
 # Parse named arguments
