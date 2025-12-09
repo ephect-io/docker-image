@@ -1,14 +1,14 @@
 # --------------------------------------------------------------------
 # Build arguments
 # --------------------------------------------------------------------
-ARG PHP_VERSION=8.4.15
+ARG VERSION=8.4.15
 
 # ====================================================================
 # == Stage 1 — Dependencies for building PHP ZTS and NTS
 # ====================================================================
 FROM ubuntu:24.04 AS build-base
 
-ARG PHP_VERSION
+ARG VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential autoconf bison re2c pkg-config \
@@ -22,9 +22,9 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
 # OCI Labels pour métadonnées
-LABEL org.opencontainers.image.title="PHP ${PHP_VERSION} Apache Development Image"
-LABEL org.opencontainers.image.description="PHP ${PHP_VERSION} with Apache mod_php, Xdebug, Composer, NVM and Node LTS"
-LABEL org.opencontainers.image.version="${PHP_VERSION}"
+LABEL org.opencontainers.image.title="PHP ${VERSION} Apache Development Image"
+LABEL org.opencontainers.image.description="PHP ${VERSION} with Apache mod_php, Xdebug, Composer, NVM and Node LTS"
+LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.vendor="ephect"
 LABEL org.opencontainers.image.authors="David Blanchard"
 
@@ -38,7 +38,7 @@ RUN touch ${LOG_FILE}
 WORKDIR /usr/src
 
 # Download PHP source
-RUN curl -fsSL https://www.php.net/distributions/php-${PHP_VERSION}.tar.gz \
+RUN curl -fsSL https://www.php.net/distributions/php-${VERSION}.tar.gz \
     | tar xz
 
 # ====================================================================
@@ -46,12 +46,12 @@ RUN curl -fsSL https://www.php.net/distributions/php-${PHP_VERSION}.tar.gz \
 # ====================================================================
 FROM build-base AS build-zts
 
-ARG PHP_VERSION
-ENV SUCCESS
-ENV FAILURE
-ENV LOG_FILE
+ARG VERSION
+ENV SUCCESS="✅"
+ENV FAILURE="❌"
+ENV LOG_FILE="/tmp/build-log.md"
 
-WORKDIR /usr/src/php-${PHP_VERSION}
+WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/zts \
@@ -131,17 +131,17 @@ RUN (apt-get update \
 # ====================================================================
 FROM build-base AS build-apache
 
-ARG PHP_VERSION
-ENV SUCCESS
-ENV FAILURE
-ENV LOG_FILE
+ARG VERSION
+ENV SUCCESS="✅"
+ENV FAILURE="❌"
+ENV LOG_FILE="/tmp/build-log.md"
 
-# Install Apache development files
+# Install Apache and development files
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    apache2-dev libapr1-dev libaprutil1-dev \
+    apache2 apache2-dev libapr1-dev libaprutil1-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/php-${PHP_VERSION}
+WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/apache-php \
@@ -226,9 +226,9 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
 # Define build log variables
-ENV SUCCESS
-ENV FAILURE
-ENV LOG_FILE
+ENV SUCCESS="✅"
+ENV FAILURE="❌"
+ENV LOG_FILE="/tmp/build-log.md"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -240,6 +240,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Create build log
 RUN touch ${LOG_FILE} && chmod 666 ${LOG_FILE}
+
+# Create user and groups
+ENV STEP="User setup"
+RUN (groupadd --gid 33 www-data 2>/dev/null || true && \
+    (userdel $(getent passwd $USER_UID | cut -d: -f1) 2>/dev/null || true) && \
+    (groupdel $(getent group $USER_GID | cut -d: -f1) 2>/dev/null || true) && \
+    groupadd --gid $USER_GID $USERNAME && \
+    useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME && \
+    usermod -aG www-data $USERNAME && \
+    echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME && \
+    echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
 # Copy ZTS and Apache PHP builds
 COPY --from=build-zts /usr/local/zts /usr/local/zts
@@ -280,19 +292,6 @@ RUN (curl -sSL https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
-# Base user setup (critique)
-ENV STEP="User setup"
-RUN (apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends sudo \
-    && groupadd --gid $USER_GID $USERNAME \
-    && useradd -s /bin/bash --uid $USER_UID --gid $USERNAME -m $USERNAME \
-    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME \
-    && usermod -aG www-data ${USERNAME} \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/* \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
-
-
 # Dev tools
 ENV STEP="Dev tools"
 RUN (apt-get update \
@@ -303,15 +302,15 @@ RUN (apt-get update \
 USER $USERNAME
 
 # NVM
-ENV STEP="NVM and Node.js"
+ENV STEP="NVM and Node LTS"
 SHELL ["/bin/bash", "-c"]
 RUN export NVM_DIR="$HOME/.nvm" && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
     nvm install --lts && \
-    nvm install corepack && \
+    nvm use --lts && \
     corepack enable && \
-    corpack prepare yarn@latest --activate && \
+    corepack prepare yarn@stable --activate && \
     sudo bash -c "echo '$SUCCESS $STEP' >> $LOG_FILE" || (sudo bash -c "echo '$FAILURE $STEP' >> $LOG_FILE" && exit 1)
 SHELL ["/bin/sh", "-c"]
 

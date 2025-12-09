@@ -46,7 +46,10 @@ RUN curl -fsSL https://www.php.net/distributions/php-${VERSION}.tar.gz \
 # ====================================================================
 FROM build-base AS build-zts
 
-ARG VERSION
+ARG PHP_VERSION
+ENV SUCCESS="✅"
+ENV FAILURE="❌"
+ENV LOG_FILE="/tmp/build-log.md"
 
 WORKDIR /usr/src/php-${VERSION}
 
@@ -129,6 +132,9 @@ RUN (apt-get update \
 FROM build-base AS build-nts
 
 ARG VERSION
+ENV SUCCESS="✅"
+ENV FAILURE="❌"
+ENV LOG_FILE="/tmp/build-log.md"
 
 WORKDIR /usr/src/php-${VERSION}
 
@@ -148,7 +154,11 @@ RUN ./configure \
     --with-iconv \
     --with-gmp \
     --with-gettext \
+    --with-pear \
+    --with-apcu \
     --with-sodium \
+    --with-ctype \
+    --with-fileinfo \
     --with-readline \
     --enable-mysqlnd \
     --enable-pdo \
