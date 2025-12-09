@@ -98,16 +98,17 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     ./configure --enable-xdebug \
         --with-php-config=/usr/local/zts/bin/php-config && \
     make -j$(nproc) && make install \
-    && echo "zend_extension=$(find /usr/local/zts/extensions/ -name xdebug.so)" > /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.client_host=localhost" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.idekey=docker" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.log=/dev/stdout" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
-    && echo "xdebug.log_level=0" >> /usr/local/etc/php/zts/conf.d/xdebug.ini \
+    && mkdir -p /usr/local/zts/etc/conf.d \
+    && echo "zend_extension=$(find /usr/local/zts/lib/php/extensions/ -name xdebug.so)" > /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.client_port=9003" >> /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.client_host=localhost" >> /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.idekey=docker" >> /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.log=/dev/stdout" >> /usr/local/zts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.log_level=0" >> /usr/local/zts/etc/conf.d/xdebug.ini \
     && rm -rf /tmp/pear \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # Install parallel
 ENV STEP="Parallel extension"
@@ -115,31 +116,34 @@ RUN (curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.z
     && unzip develop.zip \
     && cd parallel-develop \
     && sed -E "s/ZEND_TYPE_HAS_CLASS/ZEND_TYPE_IS_COMPLEX/" -i src/check.c \
-    && phpize \
-    && ./configure --enable-parallel \
+    && /usr/local/zts/bin/phpize \
+    && ./configure --enable-parallel --with-php-config=/usr/local/zts/bin/php-config \
     && make \
     && make install \
-	&& cd .. \
-	&& rm develop.zip \
-	&& rm -rf parallel-develop \
-    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && cd .. \
+    && rm develop.zip \
+    && rm -rf parallel-develop \
+    && mkdir -p /usr/local/zts/etc/conf.d \
+    && echo "extension=parallel.so" > /usr/local/zts/etc/conf.d/parallel.ini \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # PHP configuration
 ENV STEP="PHP configuration"
-RUN (echo "display_startup_errors = Off" > /usr/local/etc/php/zts/php.ini \
-    && echo "display_errors = Off" > /usr/local/etc/php/zts/php.ini \
-    && echo "log_errors = On" >> /usr/local/etc/php/zts/php.ini \
-    && echo "error_log = php_errors.log" >> /usr/local/etc/php/zts/php.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+RUN (mkdir -p /usr/local/zts/etc \
+    && echo "display_startup_errors = Off" > /usr/local/zts/etc/php.ini \
+    && echo "display_errors = Off" >> /usr/local/zts/etc/php.ini \
+    && echo "log_errors = On" >> /usr/local/zts/etc/php.ini \
+    && echo "error_log = php_errors.log" >> /usr/local/zts/etc/php.ini \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # Zip extension
 ENV STEP="Zip extension"
 RUN (apt-get update \
     && apt-get -y install --no-install-recommends libzip-dev \
-    && pecl install zip \
-    && echo extension=zip.so > /usr/local/etc/php/zts/conf.d/zip.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && /usr/local/zts/bin/pecl install zip \
+    && mkdir -p /usr/local/zts/etc/conf.d \
+    && echo "extension=zip.so" > /usr/local/zts/etc/conf.d/zip.ini \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # ====================================================================
 # == Stage 3 — Build PHP NTS (FPM) + OPCache
@@ -197,36 +201,39 @@ RUN ./configure \
 ENV STEP="Xdebug"
 RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     cd /usr/src/xdebug && \
-    /usr/local/zts/bin/phpize && \
+    /usr/local/nts/bin/phpize && \
     ./configure --enable-xdebug \
         --with-php-config=/usr/local/nts/bin/php-config && \
     make -j$(nproc) && make install \
-    && echo "zend_extension=$(find /usr/local/nts/extensions/ -name xdebug.so)" > /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.client_host=localhost" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.idekey=docker" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.log=/dev/stdout" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
-    && echo "xdebug.log_level=0" >> /usr/local/etc/php/nts/conf.d/xdebug.ini \
+    && mkdir -p /usr/local/nts/etc/conf.d \
+    && echo "zend_extension=$(find /usr/local/nts/lib/php/extensions/ -name xdebug.so)" > /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.client_port=9003" >> /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.client_host=localhost" >> /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.idekey=docker" >> /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.log=/dev/stdout" >> /usr/local/nts/etc/conf.d/xdebug.ini \
+    && echo "xdebug.log_level=0" >> /usr/local/nts/etc/conf.d/xdebug.ini \
     && rm -rf /tmp/pear \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # PHP configuration
 ENV STEP="PHP configuration"
-RUN (echo "display_startup_errors = Off" > /usr/local/etc/php/nts/php.ini \
-    && echo "display_errors = Off" > /usr/local/etc/php/nts/php.ini \
-    && echo "log_errors = On" >> /usr/local/etc/php/nts/php.ini \
-    && echo "error_log = php_errors.log" >> /usr/local/etc/php/nts/php.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+RUN (mkdir -p /usr/local/nts/etc \
+    && echo "display_startup_errors = Off" > /usr/local/nts/etc/php.ini \
+    && echo "display_errors = Off" >> /usr/local/nts/etc/php.ini \
+    && echo "log_errors = On" >> /usr/local/nts/etc/php.ini \
+    && echo "error_log = php_errors.log" >> /usr/local/nts/etc/php.ini \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # Zip extension
 ENV STEP="Zip extension"
 RUN (apt-get update \
     && apt-get -y install --no-install-recommends libzip-dev \
-    && pecl install zip \
-    && echo extension=zip.so > /usr/local/etc/php/nts/conf.d/zip.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && /usr/local/nts/bin/pecl install zip \
+    && mkdir -p /usr/local/nts/etc/conf.d \
+    && echo "extension=zip.so" > /usr/local/nts/etc/conf.d/zip.ini \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # ====================================================================
 # == Stage 4 — Final image with both PHP builds
