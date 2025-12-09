@@ -154,22 +154,23 @@ fi
 echo "" >> "${SUMMARY_FILE}"
     
 # Add PHP extensions
-cat >> "${SUMMARY_FILE}" << 'PKGEOF'
+cat >> "${SUMMARY_FILE}" << 'EOF'
 
 <details>
 <summary>📦 Installed PHP Extensions</summary>
 
 ```
-PKGEOF
-            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not available" >> "${SUMMARY_FILE}"
-            cat >> "${SUMMARY_FILE}" << 'PKGEOF'
+EOF
+docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not available" >> "${SUMMARY_FILE}"
+cat >> "${SUMMARY_FILE}" << 'EOF'
 ```
 
 </details>
 
 ---
 
-PKGEOF
+EOF
 
 echo "✅ Build completed: ${TAG}"
 echo ""
+
