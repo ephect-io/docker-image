@@ -13,7 +13,7 @@ ARG VERSION
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential autoconf bison re2c pkg-config \
     libxml2-dev libssl-dev libsqlite3-dev libpq-dev libcurl4-openssl-dev \
-    libonig-dev libzip-dev libpcre2-dev git curl ca-certificates \
+    libonig-dev libzip-dev libpcre2-dev git curl ca-certificates unzip \
     libsodium-dev libreadline-dev libbz2-dev libgmp-dev gettext \
     && rm -rf /var/lib/apt/lists/*
 
