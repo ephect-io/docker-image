@@ -80,19 +80,34 @@ echo "  ARM64: $FULL_TAG_ARM64"
 echo "  → Multi-arch tag: $FULL_TAG_MULTI"
 echo ""
 
-# Check if images exist
-echo "🔍 Checking if images exist..."
-if ! docker manifest inspect "$FULL_TAG_AMD64" > /dev/null 2>&1; then
-    echo "❌ AMD64 image not found: $FULL_TAG_AMD64"
+# Check if images exist and get their digests
+echo "🔍 Checking if images exist and extracting platform-specific digests..."
+
+# Get AMD64 digest
+AMD64_DIGEST=$(docker manifest inspect "$FULL_TAG_AMD64" -v 2>/dev/null | \
+    jq -r '.[] | select(.Descriptor.platform.architecture == "amd64") | .Descriptor.digest' | head -n 1)
+
+if [ -z "$AMD64_DIGEST" ]; then
+    echo "❌ AMD64 image not found or failed to extract digest: $FULL_TAG_AMD64"
     exit 1
 fi
 
-if ! docker manifest inspect "$FULL_TAG_ARM64" > /dev/null 2>&1; then
-    echo "❌ ARM64 image not found: $FULL_TAG_ARM64"
+# Get ARM64 digest
+ARM64_DIGEST=$(docker manifest inspect "$FULL_TAG_ARM64" -v 2>/dev/null | \
+    jq -r '.[] | select(.Descriptor.platform.architecture == "arm64") | .Descriptor.digest' | head -n 1)
+
+if [ -z "$ARM64_DIGEST" ]; then
+    echo "❌ ARM64 image not found or failed to extract digest: $FULL_TAG_ARM64"
     exit 1
 fi
 
-echo "✅ Both images found"
+# Construct digest references
+AMD64_REF="${ROCKER}/dev-php@${AMD64_DIGEST}"
+ARM64_REF="${ROCKER}/dev-php@${ARM64_DIGEST}"
+
+echo "✅ Platform-specific images found:"
+echo "  AMD64: ${AMD64_REF}"
+echo "  ARM64: ${ARM64_REF}"
 echo ""
 
 # Remove existing manifest if it exists
@@ -102,16 +117,16 @@ docker manifest rm "$FULL_TAG_MULTI" 2>/dev/null || true
 # Create manifest
 echo "📦 Creating manifest..."
 if ! docker manifest create "$FULL_TAG_MULTI" \
-    "$FULL_TAG_AMD64" \
-    "$FULL_TAG_ARM64"; then
+    "$AMD64_REF" \
+    "$ARM64_REF"; then
     echo "❌ Failed to create manifest"
     exit 1
 fi
 
 # Annotate architectures
 echo "🏷️  Annotating architectures..."
-docker manifest annotate "$FULL_TAG_MULTI" "$FULL_TAG_AMD64" --os linux --arch amd64
-docker manifest annotate "$FULL_TAG_MULTI" "$FULL_TAG_ARM64" --os linux --arch arm64 --variant v8
+docker manifest annotate "$FULL_TAG_MULTI" "$AMD64_REF" --os linux --arch amd64
+docker manifest annotate "$FULL_TAG_MULTI" "$ARM64_REF" --os linux --arch arm64 --variant v8
 
 # Push manifest
 echo "📤 Pushing manifest..."
