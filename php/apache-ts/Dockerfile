@@ -282,6 +282,10 @@ RUN (groupadd --gid 33 www-data 2>/dev/null || true && \
 COPY --from=build-zts /usr/local/zts /usr/local/zts
 COPY --from=build-apache /usr/local/apache-php /usr/local/apache-php
 
+# Copy build logs from previous stages
+COPY --from=build-zts /tmp/build-log-stage-zts.md /tmp/build-log-stage-zts.md
+COPY --from=build-apache /tmp/build-log-stage-nts.md /tmp/build-log-stage-nts.md
+
 # Copy Apache module
 COPY --from=build-apache /usr/lib/apache2/modules/libphp.so /usr/lib/apache2/modules/
 
@@ -343,6 +347,21 @@ SHELL ["/bin/sh", "-c"]
 # Set proper permissions for web directory
 RUN sudo chown -R www-data:www-data /var/www/html && \
     sudo chmod -R 755 /var/www/html
+
+ENV LOG_FILE="/tmp/build-log.md"
+
+# Consolidate all build logs
+RUN echo "### Build ZTS Stage" >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    cat /tmp/build-log-stage-zts.md >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    echo "### Build NTS Stage" >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    cat /tmp/build-log-stage-nts.md >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    echo "### Build Global Stage" >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    cat /tmp/build-log-stage-final.md >> $LOG_FILE
 
 EXPOSE 80
 

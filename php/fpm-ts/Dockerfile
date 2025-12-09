@@ -276,6 +276,10 @@ RUN (groupadd --gid 33 www-data 2>/dev/null || true && \
 COPY --from=build-zts /usr/local/zts /usr/local/zts
 COPY --from=build-nts /usr/local/nts /usr/local/nts
 
+# Copy build logs from previous stages
+COPY --from=build-zts /tmp/build-log-stage-zts.md /tmp/build-log-stage-zts.md
+COPY --from=build-nts /tmp/build-log-stage-nts.md /tmp/build-log-stage-nts.md
+
 # Provide command shortcuts
 RUN ln -s /usr/local/zts/bin/php /usr/local/bin/phps && \
     ln -s /usr/local/nts/bin/php /usr/local/bin/php && \
@@ -314,6 +318,21 @@ RUN export NVM_DIR="$HOME/.nvm" && \
     corepack prepare yarn@stable --activate && \
     sudo bash -c "echo '$SUCCESS $STEP' >> $LOG_FILE" || (sudo bash -c "echo '$FAILURE $STEP' >> $LOG_FILE" && exit 1)
 SHELL ["/bin/sh", "-c"]
+
+ENV LOG_FILE="/tmp/build-log.md"
+
+# Consolidate all build logs
+RUN echo "### Build ZTS Stage" >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    cat /tmp/build-log-stage-zts.md >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    echo "### Build NTS Stage" >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    cat /tmp/build-log-stage-nts.md >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    echo "### Build Global Stage" >> $LOG_FILE && \
+    echo "" >> $LOG_FILE && \
+    cat /tmp/build-log-stage-final.md >> $LOG_FILE
 
 EXPOSE 9000
 
