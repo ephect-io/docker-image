@@ -10,7 +10,6 @@ VERSION=""
 ALL_ARCH="false"
 ROCKER=${ROCKER:-localhost:5000}
 
-
 # Parse named arguments
 for arg in "$@"; do
     case $arg in
@@ -34,9 +33,10 @@ for arg in "$@"; do
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --package=PACKAGE      Package to build (apache, fpm, zts)"
-            echo "  --version=VERSION      PHP version (e.g., 8.5.0)"
+            echo "  --package=PACKAGE     Package to build (apache, fpm, zts)"
+            echo "  --version=VERSION     PHP version (e.g., 8.5.0)"
             echo "  --full                Build for all architectures and push"
+            echo "  --prepare             Prepare build environment"
             echo "  --help, -h            Show this help message"
             echo ""
             echo "Environment variables:"
@@ -72,7 +72,6 @@ PUSH="--push"
 if [ "$ALL_ARCH" == "true" ]; then
     PUSH="--push"
 fi
-
 
 # Check if local registry is available
 echo ""
@@ -119,7 +118,6 @@ PHP_DIR="${SCRIPT_DIR}/../php"
 set -e
 docker buildx build --platform ${ARCH} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
 
-
 SUMMARY_FILE="./var/log/build-summary-${PACKAGE}-${VERSION}.md"
 # Create or clear summary file
 echo "" > "${SUMMARY_FILE}"
@@ -132,21 +130,21 @@ else
     echo "   ⚠️  Log not available"
 fi
 
-if docker run --rm ${TAG} cat /tmp/build-log-stage-nts.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+if docker run --rm ${TAG} echo "### NTS build" >> "${SUMMARY_FILE}" && cat /tmp/build-log-stage-nts.md >> "${SUMMARY_FILE}" 2>/dev/null; then
     echo "   ✅ Log extracted"
 else
     echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
     echo "   ⚠️  Log not available"
 fi
 
-if docker run --rm ${TAG} cat /tmp/build-log-stage-zts.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+if docker run --rm ${TAG} echo "### ZTS build" >> "${SUMMARY_FILE}" && cat /tmp/build-log-stage-zts.md >> "${SUMMARY_FILE}" 2>/dev/null; then
     echo "   ✅ Log extracted"
 else
     echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
     echo "   ⚠️  Log not available"
 fi
 
-if docker run --rm ${TAG} cat /tmp/build-log-stage-final.md >> "${SUMMARY_FILE}" 2>/dev/null; then
+if docker run --rm ${TAG} echo "### Global build" >> "${SUMMARY_FILE}" && cat /tmp/build-log-stage-final.md >> "${SUMMARY_FILE}" 2>/dev/null; then
     echo "   ✅ Log extracted"
 else
     echo "⚠️  Build log not available" >> "${SUMMARY_FILE}"
