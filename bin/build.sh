@@ -129,8 +129,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHP_DIR="${SCRIPT_DIR}/../php"
 
 set -e
-docker buildx use desktop-linux
-docker buildx build --platform ${PLATFORM} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
+# Use desktop-linux context on macOS, keep current context on Linux/WSL
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    docker buildx use desktop-linux
+fi
+docker buildx build --no-cache --platform ${PLATFORM} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
 
 SUMMARY_FILE="./var/log/build-summary-${PACKAGE}-${VERSION}.md"
 # Create or clear summary file
