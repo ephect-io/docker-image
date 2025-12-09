@@ -23,6 +23,10 @@ prepare:
 	@echo "Building for $(ARCH) architecture"
 	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --prepare
 
+manifest:
+	@echo "Creating and pushing manifest for all architectures"
+	cd .. && ./bin/make-manifest.sh --package=$(package) --version=$(version)
+
 push:
 	@echo "Pushing the image on remote DockerHub repository"
 	docker tag $(TAG) $(REMOTE_TAG)
