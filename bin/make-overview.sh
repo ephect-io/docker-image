@@ -48,7 +48,7 @@ for arg in "$@"; do
 done
 
 ARCH=$(uname -m)
-ROCKER=${ROCKER:-localhost:5000}
+ROCKER=${ROCKER:-localhost:5100}
 REPO="${ROCKER}/dev-php"
 REMOTE_REPO="ephect/dev-php"
 PUBLISH_REPO="ephect/dev-php"

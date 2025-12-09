@@ -1,4 +1,4 @@
 # Docker local registry setup
-export ROCKER_PORT=5000
+export ROCKER_PORT=5100
 export ROCKER_HOST=localhost
 export ROCKER=$ROCKER_HOST:$ROCKER_PORT

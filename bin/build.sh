@@ -8,7 +8,7 @@
 PACKAGE=""
 VERSION=""
 ALL_ARCH="false"
-ROCKER=${ROCKER:-localhost:5000}
+ROCKER=${ROCKER:-localhost:5100}
 
 # Parse named arguments
 for arg in "$@"; do
@@ -40,7 +40,7 @@ for arg in "$@"; do
             echo "  --help, -h            Show this help message"
             echo ""
             echo "Environment variables:"
-            echo "  ROCKER                Local registry URL (default: localhost:5000)"
+            echo "  ROCKER                Local registry URL (default: localhost:5100)"
             echo ""
             echo "Examples:"
             echo "  $0 --package=apache --version=8.5.0"

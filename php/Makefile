@@ -3,7 +3,7 @@ ARCH = $(shell uname -m)
 version ?= 8.5.0
 package ?= apache
 repo ?= ephect/dev-php
-ROCKER ?= localhost:5000
+ROCKER ?= localhost:5100
 TAG = "$(ROCKER)/dev-php:$(package)-$(version)"
 REMOTE_TAG = "docker.io/ephect/dev-php:$(package)-$(version)"
 

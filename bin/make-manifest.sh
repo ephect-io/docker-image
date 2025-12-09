@@ -30,7 +30,7 @@ for arg in "$@"; do
             echo "  --help, -h            Show this help message"
             echo ""
             echo "Environment variables:"
-            echo "  ROCKER                Local ROCKER URL (default: localhost:5000)"
+            echo "  ROCKER                Local ROCKER URL (default: localhost:5100)"
             echo ""
             echo "Examples:"
             echo "  $0 --package=apache --version=8.5.0"

@@ -1,4 +1,19 @@
 
+### Build ZTS Stage
+
+✅ Xdebug extension
+✅ Parallel extension
+✅ PHP configuration
+✅ Zip extension
+
+### Build NTS Stage
+
+✅ Xdebug
+✅ PHP configuration
+✅ Zip extension
+
+### Build Global Stage
+
 ✅ User setup
 ✅ Composer
 ✅ Dev tools
