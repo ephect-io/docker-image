@@ -290,13 +290,14 @@ RUN mkdir -p /usr/local/zts/etc/conf.d \
              /var/log/php \
              /var/www/html
 
-# Configure Apache for PHP
+# Configure Apache for PHP with MPM prefork (non-threaded)
 RUN echo "LoadModule php_module /usr/lib/apache2/modules/libphp.so" > /etc/apache2/mods-available/php.load && \
     echo "<FilesMatch \.php$>" > /etc/apache2/mods-available/php.conf && \
     echo "    SetHandler application/x-httpd-php" >> /etc/apache2/mods-available/php.conf && \
     echo "</FilesMatch>" >> /etc/apache2/mods-available/php.conf && \
     echo "PHPINIDir /usr/local/apache-php/etc" >> /etc/apache2/mods-available/php.conf && \
-    a2enmod php rewrite && \
+    a2dismod mpm_event mpm_worker && \
+    a2enmod mpm_prefork php rewrite && \
     sed -i 's|/var/www/html|/var/www/html|g' /etc/apache2/sites-available/000-default.conf && \
     sed -i 's|DocumentRoot.*|DocumentRoot /var/www/html|g' /etc/apache2/sites-available/000-default.conf && \
     echo "<Directory /var/www/html>" >> /etc/apache2/sites-available/000-default.conf && \
