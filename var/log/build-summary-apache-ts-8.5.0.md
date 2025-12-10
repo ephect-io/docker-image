@@ -63,13 +63,16 @@ sqlite3
 standard
 tokenizer
 uri
+xdebug
 xml
 xmlreader
 xmlwriter
 Zend OPcache
+zip
 zlib
 
 [Zend Modules]
+Xdebug
 Zend OPcache
 
 ```
