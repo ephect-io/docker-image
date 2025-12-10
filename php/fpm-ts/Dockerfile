@@ -54,6 +54,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/zts \
+    --with-config-file-path=/usr/local/zts/lib \
+    --with-config-file-scan-dir=/usr/local/zts/lib/conf.d \
     --enable-zts \
     --enable-cli \
     --disable-cgi \
@@ -88,7 +90,9 @@ RUN ./configure \
     --enable-session \
     --enable-posix \
     --enable-sockets \
-    && make -j$(nproc) && make install
+    && make -j$(nproc) && make install \
+    && mkdir -p /usr/local/zts/etc/conf.d \
+    && ln -s /usr/local/zts/etc/conf.d /usr/local/zts/lib/conf.d
 
 # Xdebug
 ENV STEP="Xdebug"
@@ -98,7 +102,6 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     ./configure --enable-xdebug \
         --with-php-config=/usr/local/zts/bin/php-config && \
     make -j$(nproc) && make install \
-    && mkdir -p /usr/local/zts/etc/conf.d \
     && echo "zend_extension=$(find /usr/local/zts/lib/php/extensions/ -name xdebug.so)" > /usr/local/zts/etc/conf.d/xdebug.ini \
     && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/zts/etc/conf.d/xdebug.ini \
     && echo "xdebug.start_with_request=yes" >> /usr/local/zts/etc/conf.d/xdebug.ini \
@@ -160,6 +163,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/nts \
+    --with-config-file-path=/usr/local/nts/lib \
+    --with-config-file-scan-dir=/usr/local/nts/lib/conf.d \
     --disable-zts \
     --enable-fpm \
     --with-fpm-user=www-data \
@@ -195,7 +200,9 @@ RUN ./configure \
     --enable-session \
     --enable-posix \
     --enable-sockets \
-    && make -j$(nproc) && make install
+    && make -j$(nproc) && make install \
+    && mkdir -p /usr/local/nts/etc/conf.d \
+    && ln -s /usr/local/nts/etc/conf.d /usr/local/nts/lib/conf.d
 
 # Xdebug
 ENV STEP="Xdebug"
@@ -205,7 +212,6 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     ./configure --enable-xdebug \
         --with-php-config=/usr/local/nts/bin/php-config && \
     make -j$(nproc) && make install \
-    && mkdir -p /usr/local/nts/etc/conf.d \
     && echo "zend_extension=$(find /usr/local/nts/lib/php/extensions/ -name xdebug.so)" > /usr/local/nts/etc/conf.d/xdebug.ini \
     && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/nts/etc/conf.d/xdebug.ini \
     && echo "xdebug.start_with_request=yes" >> /usr/local/nts/etc/conf.d/xdebug.ini \
@@ -285,10 +291,8 @@ RUN ln -s /usr/local/zts/bin/php /usr/local/bin/phps && \
     ln -s /usr/local/nts/bin/php /usr/local/bin/php && \
     ln -s /usr/local/nts/sbin/php-fpm /usr/local/sbin/php-fpm
 
-# Config folders
-RUN mkdir -p /usr/local/zts/etc/conf.d \
-             /usr/local/nts/etc/conf.d \
-             /var/log/php
+# Create necessary folders (conf.d folders already copied with PHP builds)
+RUN mkdir -p /var/log/php
 
 # Dev tools
 ENV STEP="Dev tools"

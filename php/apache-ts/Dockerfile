@@ -54,6 +54,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/zts \
+    --with-config-file-path=/usr/local/zts/lib \
+    --with-config-file-scan-dir=/usr/local/zts/lib/conf.d \
     --enable-zts \
     --enable-cli \
     --disable-cgi \
@@ -88,7 +90,9 @@ RUN ./configure \
     --enable-session \
     --enable-posix \
     --enable-sockets \
-    && make -j$(nproc) && make install
+    && make -j$(nproc) && make install \
+    && mkdir -p /usr/local/zts/etc/conf.d \
+    && ln -s /usr/local/zts/etc/conf.d /usr/local/zts/lib/conf.d
 
 # Xdebug
 ENV STEP="Xdebug extension"
@@ -98,7 +102,6 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     ./configure --enable-xdebug \
         --with-php-config=/usr/local/zts/bin/php-config && \
     make -j$(nproc) && make install \
-    && mkdir -p /usr/local/zts/etc/conf.d \
     && echo "zend_extension=$(find /usr/local/zts/lib/php/extensions/ -name xdebug.so)" > /usr/local/zts/etc/conf.d/xdebug.ini \
     && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/zts/etc/conf.d/xdebug.ini \
     && echo "xdebug.start_with_request=yes" >> /usr/local/zts/etc/conf.d/xdebug.ini \
@@ -165,6 +168,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/apache-php \
+    --with-config-file-path=/usr/local/apache-php/lib \
+    --with-config-file-scan-dir=/usr/local/apache-php/lib/conf.d \
     --with-apxs2=/usr/bin/apxs \
     --with-openssl \
     --with-curl \
@@ -197,7 +202,9 @@ RUN ./configure \
     --enable-session \
     --enable-posix \
     --enable-sockets \
-    && make -j$(nproc) && make install
+    && make -j$(nproc) && make install \
+    && mkdir -p /usr/local/apache-php/etc/conf.d \
+    && ln -s /usr/local/apache-php/etc/conf.d /usr/local/apache-php/lib/conf.d
 
 # Xdebug
 ENV STEP="Xdebug"
@@ -207,7 +214,6 @@ RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     ./configure --enable-xdebug \
         --with-php-config=/usr/local/apache-php/bin/php-config && \
     make -j$(nproc) && make install \
-    && mkdir -p /usr/local/apache-php/etc/conf.d \
     && echo "zend_extension=$(find /usr/local/apache-php/lib/php/extensions/ -name xdebug.so)" > /usr/local/apache-php/etc/conf.d/xdebug.ini \
     && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/apache-php/etc/conf.d/xdebug.ini \
     && echo "xdebug.start_with_request=yes" >> /usr/local/apache-php/etc/conf.d/xdebug.ini \
@@ -293,10 +299,8 @@ COPY --from=build-apache /usr/lib/apache2/modules/libphp.so /usr/lib/apache2/mod
 RUN ln -s /usr/local/zts/bin/php /usr/local/bin/phps && \
     ln -s /usr/local/apache-php/bin/php /usr/local/bin/php
 
-# Config folders
-RUN mkdir -p /usr/local/zts/etc/conf.d \
-             /usr/local/apache-php/etc/conf.d \
-             /var/log/php \
+# Create necessary folders (conf.d folders already copied with PHP builds)
+RUN mkdir -p /var/log/php \
              /var/www/html
 
 # Configure Apache for PHP with MPM prefork (non-threaded)
