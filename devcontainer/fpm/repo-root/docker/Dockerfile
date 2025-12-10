@@ -1,26 +1,52 @@
-# [Choice] PHP version (use -bullseye variants on local arm64/Apple Silicon): 8-apache-bullseye, 8.1-apache-bullseye, 8.0-apache-bullseye, 7-apache-bullseye, 7.4-apache-bullseye, 8-apache-buster, 8.1-apache-buster, 8.0-apache-buster, 7-apache-buster, 7.4-apache-buster
-ARG VARIANT=8.4.15
-ARG ROCKER=localhost:5100/dev-php
-FROM ${ROCKER}:fpm-${VARIANT}
+ARG VARIANT=8.5.0
+ARG REPO=${ROCKER:-ephect/dev-php}
+FROM ${REPO}:fpm-ts-${VARIANT}
+
+ARG BUILD_ENV=development
 
 USER root
 
-# [Optional] Uncomment this section to install additional packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+# Configure FPM to listen on port 8080
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = 127.0.0.1:9001/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.owner = www-data/listen.owner = salamandra/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.group = www-data/listen.group = salamandra/' /usr/local/etc/php-fpm.d/www.conf
 
-COPY php/xdebug.ini /usr/local/etc/php/conf.d/
+# For production: copy application files into the image
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        mkdir -p /var/www/html; \
+    fi
 
-# Configure PHP-FPM to run as the same user
-RUN sed -i 's/user = www-data/user = salamandra/' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's/group = www-data/group = salamandra/' /usr/local/etc/php-fpm.d/www.conf
+COPY --chown=salamandra:salamandra docker/post-up-dev.sh /tmp/docker-config/
+COPY --chown=salamandra:salamandra docker/post-up-prod.sh /tmp/docker-config/
 
-RUN apt-get update && apt-get install -y libpq-dev
+RUN if [ "$BUILD_ENV" = "development" ]; then \
+        #cp -r /tmp/docker-config /var/www/html/docker; \
+        cp /tmp/docker-config/post-up-dev.sh /usr/local/bin/post-up && \
+        chmod +x /usr/local/bin/post-up; \
+    fi
 
-RUN docker-php-ext-install pdo_pgsql \
-    && docker-php-ext-enable pdo_pgsql
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        #cp -r /tmp/docker-config /var/www/html/docker; \
+        cp /tmp/docker-config/post-up-prod.sh /usr/local/bin/post-up && \
+        chmod +x /usr/local/bin/post-up; \
+    fi
 
-RUN a2enmod rewrite
-RUN apachectl restart
+# Production: copy all files
+COPY --chown=salamandra:salamandra . /tmp/app-files/
 
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        cp -r /tmp/app-files/* /var/www/html/ && \
+        cp -r /tmp/app-files/.[!.]* /var/www/html/ 2>/dev/null || true && \
+        chown -R salamandra:salamandra /var/www/html && \
+        cd /var/www/html && \
+        composer install --no-dev --optimize-autoloader; \
+    fi && \
+    rm -rf /tmp/app-files /tmp/docker-config
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Run as salamandra
 USER salamandra
+
+EXPOSE 8080

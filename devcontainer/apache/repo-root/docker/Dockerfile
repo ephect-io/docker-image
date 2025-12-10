@@ -1,27 +1,58 @@
-# [Choice] PHP version (use -bullseye variants on local arm64/Apple Silicon): 8-apache-bullseye, 8.1-apache-bullseye, 8.0-apache-bullseye, 7-apache-bullseye, 7.4-apache-bullseye, 8-apache-buster, 8.1-apache-buster, 8.0-apache-buster, 7-apache-buster, 7.4-apache-buster
-ARG VARIANT=8.4.15
-ARG ROCKER=localhost:5100/dev-php
-FROM ${ROCKER}:apache-${VARIANT}
+ARG VARIANT=8.5.0
+ARG REPO=${ROCKER:-ephect/dev-php}
+FROM ${REPO}:apache-ts-${VARIANT}
+
+ARG BUILD_ENV=development
 
 USER root
 
-# [Optional] Uncomment this section to install additional packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+COPY docker/apache/000-default.conf /etc/apache2/sites-available/
 
-COPY apache/000-default.conf /etc/apache2/sites-available/
-COPY php/xdebug.ini /usr/local/etc/php/conf.d/
+# Configure Apache to run as salamandra user
+RUN sed -i 's/export APACHE_RUN_USER=www-data/export APACHE_RUN_USER=salamandra/' /etc/apache2/envvars && \
+    sed -i 's/export APACHE_RUN_GROUP=www-data/export APACHE_RUN_GROUP=salamandra/' /etc/apache2/envvars
 
-RUN echo "ServerName myapp.docker.internal" >> /etc/apache2/apache2.conf
-RUN echo '#!/bin/bash \
-echo "127.0.0.1 myapp.docker.internal" >> /etc/hosts 2>/dev/null || true'
+# Configure Apache to listen on port 8080
+RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf && \
+    echo "ServerName myapp.docker.internal" >> /etc/apache2/apache2.conf && \
+    a2enmod rewrite
 
-RUN apt-get update && apt-get install -y libpq-dev
+# For production: copy application files into the image
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        mkdir -p /var/www/html; \
+    fi
 
-RUN docker-php-ext-install pdo_pgsql \
-    && docker-php-ext-enable pdo_pgsql
+COPY --chown=salamandra:salamandra docker/post-up-dev.sh /tmp/docker-config/
+COPY --chown=salamandra:salamandra docker/post-up-prod.sh /tmp/docker-config/
 
-RUN a2enmod rewrite
-RUN apachectl restart
+RUN if [ "$BUILD_ENV" = "development" ]; then \
+        #cp -r /tmp/docker-config /var/www/html/docker; \
+        cp /tmp/docker-config/post-up-dev.sh /usr/local/bin/post-up && \
+        chmod +x /usr/local/bin/post-up; \
+    fi
 
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        #cp -r /tmp/docker-config /var/www/html/docker; \
+        cp /tmp/docker-config/post-up-prod.sh /usr/local/bin/post-up && \
+        chmod +x /usr/local/bin/post-up; \
+    fi
+
+# Production: copy all files
+COPY --chown=salamandra:salamandra . /tmp/app-files/
+
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        cp -r /tmp/app-files/* /var/www/html/ && \
+        cp -r /tmp/app-files/.[!.]* /var/www/html/ 2>/dev/null || true && \
+        chown -R salamandra:salamandra /var/www/html && \
+        cd /var/www/html && \
+        composer install --no-dev --optimize-autoloader; \
+    fi && \
+    rm -rf /tmp/app-files /tmp/docker-config
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Run as salamandra
 USER salamandra
+
+EXPOSE 8080
