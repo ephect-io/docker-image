@@ -54,8 +54,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/zts \
-    --with-config-file-path=/usr/local/zts/lib \
-    --with-config-file-scan-dir=/usr/local/zts/lib/conf.d \
+    --with-config-file-path=/usr/local/zts/etc \
+    --with-config-file-scan-dir=/usr/local/zts/etc/conf.d \
     --enable-zts \
     --enable-cli \
     --disable-cgi \
@@ -163,8 +163,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/nts \
-    --with-config-file-path=/usr/local/nts/lib \
-    --with-config-file-scan-dir=/usr/local/nts/lib/conf.d \
+    --with-config-file-path=/usr/local/nts/etc \
+    --with-config-file-scan-dir=/usr/local/nts/etc/conf.d \
     --disable-zts \
     --enable-fpm \
     --with-fpm-user=www-data \
@@ -291,7 +291,7 @@ RUN ln -s /usr/local/zts/bin/php /usr/local/bin/phps && \
     ln -s /usr/local/nts/bin/php /usr/local/bin/php && \
     ln -s /usr/local/nts/sbin/php-fpm /usr/local/sbin/php-fpm
 
-# Create necessary folders (conf.d folders already copied with PHP builds)
+# Create additional directories (without overwriting existing config)
 RUN mkdir -p /var/log/php
 
 # Dev tools

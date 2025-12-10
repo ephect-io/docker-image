@@ -54,8 +54,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/zts \
-    --with-config-file-path=/usr/local/zts/lib \
-    --with-config-file-scan-dir=/usr/local/zts/lib/conf.d \
+    --with-config-file-path=/usr/local/zts/etc \
+    --with-config-file-scan-dir=/usr/local/zts/etc/conf.d \
     --enable-zts \
     --enable-cli \
     --disable-cgi \
@@ -168,8 +168,8 @@ WORKDIR /usr/src/php-${VERSION}
 
 RUN ./configure \
     --prefix=/usr/local/apache-php \
-    --with-config-file-path=/usr/local/apache-php/lib \
-    --with-config-file-scan-dir=/usr/local/apache-php/lib/conf.d \
+    --with-config-file-path=/usr/local/apache-php/etc \
+    --with-config-file-scan-dir=/usr/local/apache-php/etc/conf.d \
     --with-apxs2=/usr/bin/apxs \
     --with-openssl \
     --with-curl \
@@ -207,7 +207,7 @@ RUN ./configure \
     && ln -s /usr/local/apache-php/etc/conf.d /usr/local/apache-php/lib/conf.d
 
 # Xdebug
-ENV STEP="Xdebug"
+ENV STEP="Xdebug extension"
 RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     cd /usr/src/xdebug && \
     /usr/local/apache-php/bin/phpize && \
@@ -299,16 +299,17 @@ COPY --from=build-apache /usr/lib/apache2/modules/libphp.so /usr/lib/apache2/mod
 RUN ln -s /usr/local/zts/bin/php /usr/local/bin/phps && \
     ln -s /usr/local/apache-php/bin/php /usr/local/bin/php
 
-# Create necessary folders (conf.d folders already copied with PHP builds)
-RUN mkdir -p /var/log/php \
-             /var/www/html
+# Create additional directories (without overwriting existing config)
+RUN mkdir -p /var/log/php /var/www/html
 
 # Configure Apache for PHP with MPM prefork (non-threaded)
-RUN echo "LoadModule php_module /usr/lib/apache2/modules/libphp.so" > /etc/apache2/mods-available/php.load && \
+ENV STEP="Apache configuration"
+RUN (echo "LoadModule php_module /usr/lib/apache2/modules/libphp.so" > /etc/apache2/mods-available/php.load && \
     echo "<FilesMatch \.php$>" > /etc/apache2/mods-available/php.conf && \
     echo "    SetHandler application/x-httpd-php" >> /etc/apache2/mods-available/php.conf && \
     echo "</FilesMatch>" >> /etc/apache2/mods-available/php.conf && \
     echo "PHPINIDir /usr/local/apache-php/etc" >> /etc/apache2/mods-available/php.conf && \
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     a2dismod mpm_event mpm_worker && \
     a2enmod mpm_prefork php rewrite && \
     sed -i 's|/var/www/html|/var/www/html|g' /etc/apache2/sites-available/000-default.conf && \
@@ -317,7 +318,8 @@ RUN echo "LoadModule php_module /usr/lib/apache2/modules/libphp.so" > /etc/apach
     echo "    Options Indexes FollowSymLinks" >> /etc/apache2/sites-available/000-default.conf && \
     echo "    AllowOverride All" >> /etc/apache2/sites-available/000-default.conf && \
     echo "    Require all granted" >> /etc/apache2/sites-available/000-default.conf && \
-    echo "</Directory>" >> /etc/apache2/sites-available/000-default.conf
+    echo "</Directory>" >> /etc/apache2/sites-available/000-default.conf && \
+    echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
 # Composer
 ENV STEP="Composer"

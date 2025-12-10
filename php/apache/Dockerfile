@@ -41,7 +41,7 @@ RUN (echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
 # Xdebug
-ENV STEP="Xdebug"
+ENV STEP="Xdebug extension"
 RUN (pecl install xdebug \
     && docker-php-ext-enable xdebug \
     && echo "xdebug.mode=develop,coverage,debug" > /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
@@ -79,6 +79,7 @@ RUN (curl -sSL https://getcomposer.org/installer | php \
 # Enable rewrite module
 ENV STEP="Apache rewrite module"
 RUN (a2enmod rewrite \
+    && echo "ServerName localhost" >> /etc/apache2/apache2.conf \
     && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
 
 USER $USERNAME
