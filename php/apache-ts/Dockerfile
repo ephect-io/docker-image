@@ -21,7 +21,7 @@ ARG USERNAME=salamandra
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# OCI Labels pour métadonnées
+# OCI Labels for metadata
 LABEL org.opencontainers.image.title="PHP ${VERSION} Apache Development Image"
 LABEL org.opencontainers.image.description="PHP ${VERSION} with Apache mod_php, Xdebug, Composer, NVM and Node LTS"
 LABEL org.opencontainers.image.version="${VERSION}"

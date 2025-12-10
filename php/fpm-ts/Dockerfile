@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------
 # Build arguments
 # --------------------------------------------------------------------
-ARG VERSION=8.4.15
+ARG VERSION=8.5.0
 
 # ====================================================================
 # == Stage 1 — Dependencies for building PHP ZTS and NTS
@@ -21,7 +21,7 @@ ARG USERNAME=salamandra
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# OCI Labels pour métadonnées
+# OCI Labels for metadata
 LABEL org.opencontainers.image.title="PHP ${VERSION} FPM Development Image"
 LABEL org.opencontainers.image.description="PHP ${VERSION} with FPM, Xdebug, Composer, NVM and Node LTS"
 LABEL org.opencontainers.image.version="${VERSION}"
@@ -44,7 +44,7 @@ RUN curl -fsSL https://www.php.net/distributions/php-${VERSION}.tar.gz \
 # ====================================================================
 FROM build-base AS build-zts
 
-ARG PHP_VERSION
+ARG VERSION
 ENV SUCCESS="✅"
 ENV FAILURE="❌"
 ENV STAGE="zts"
@@ -95,7 +95,7 @@ RUN ./configure \
     && ln -s /usr/local/zts/etc/conf.d /usr/local/zts/lib/conf.d
 
 # Xdebug
-ENV STEP="Xdebug"
+ENV STEP="Xdebug extension"
 RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     cd /usr/src/xdebug && \
     /usr/local/zts/bin/phpize && \
@@ -205,7 +205,7 @@ RUN ./configure \
     && ln -s /usr/local/nts/etc/conf.d /usr/local/nts/lib/conf.d
 
 # Xdebug
-ENV STEP="Xdebug"
+ENV STEP="Xdebug extension"
 RUN (git clone https://github.com/xdebug/xdebug.git /usr/src/xdebug && \
     cd /usr/src/xdebug && \
     /usr/local/nts/bin/phpize && \
