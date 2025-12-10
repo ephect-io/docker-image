@@ -3,7 +3,7 @@ ARCH = $(shell uname -m)
 version ?= 8.5.0
 package ?= apache
 repo ?= ephect/dev-php
-ROCKER ?= localhost:5000
+ROCKER ?= localhost:5100
 TAG = "$(ROCKER)/dev-php:$(package)-$(version)"
 REMOTE_TAG = "docker.io/ephect/dev-php:$(package)-$(version)"
 
@@ -13,7 +13,7 @@ default: help
 # Example of using architecture-specific logic
 build:
 	@echo "Building for linux/amd64 and linux/arm64/v8 architectures"
-	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --full=true
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --full
 
 local:
 	@echo "Building for $(ARCH) architecture"
@@ -21,12 +21,16 @@ local:
 
 prepare:
 	@echo "Building for $(ARCH) architecture"
-	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --prepare=true
+	cd .. && ./bin/build.sh --package=$(package) --version=$(version) --prepare
+
+manifest:
+	@echo "Creating and pushing manifest for all architectures"
+	cd .. && ./bin/make-manifest.sh --package=$(package) --version=$(version)
 
 push:
 	@echo "Pushing the image on remote DockerHub repository"
-	docker tag $(TAG) $(REMOTE_TAG)
-	docker push $(REMOTE_TAG)
+	docker tag $(TAG)-$(ARCH) $(REMOTE_TAG)-$(ARCH)
+	docker push $(REMOTE_TAG)-$(ARCH)
 
 overview:
 	@echo "Generating README for all combinations..."

@@ -8,7 +8,7 @@ ARG USER_GID=$USER_UID
 
 # OCI Labels pour métadonnées
 LABEL org.opencontainers.image.title="PHP ${VERSION} ZTS Development Image"
-LABEL org.opencontainers.image.description="PHP ${VERSION} with ZTS, Xdebug, Composer, NVM and Node.js LTS"
+LABEL org.opencontainers.image.description="PHP ${VERSION} with Apache, Xdebug, Composer, NVM and Node.js LTS"
 LABEL org.opencontainers.image.version="${VERSION}"
 LABEL org.opencontainers.image.vendor="ephect"
 LABEL org.opencontainers.image.authors="David Blanchard"
@@ -19,7 +19,6 @@ ENV LOG_FILE="/tmp/build-log.md"
 
 # Create build log
 RUN touch ${LOG_FILE}
-
 
 # Base user setup (critique)
 ENV STEP="User setup"
@@ -43,17 +42,17 @@ RUN (echo "display_startup_errors = Off" > /usr/local/etc/php/php.ini \
 
 # Xdebug
 ENV STEP="Xdebug"
-RUN (yes | pecl install xdebug \
-    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.mode=develop,coverage,debug" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.client_host=localhost" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.idekey=docker" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.log=/dev/stdout" >> /usr/local/etc/php/conf.d/xdebug.ini \
-    && echo "xdebug.log_level=0" >> /usr/local/etc/php/conf.d/xdebug.ini \
+RUN (pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && echo "xdebug.mode=develop,coverage,debug" > /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.client_host=localhost" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.idekey=docker" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.log=/dev/stdout" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.log_level=0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && rm -rf /tmp/pear \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # Dev tools
 ENV STEP="Dev tools"
@@ -71,19 +70,19 @@ RUN (curl -L -O https://github.com/krakjoe/parallel/archive/refs/heads/develop.z
     && ./configure --enable-parallel \
     && make \
     && make install \
-	&& cd .. \
-	&& rm develop.zip \
-	&& rm -rf parallel-develop \
-    && echo "extension=parallel.so" > /usr/local/etc/php/conf.d/parallel.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && cd .. \
+    && rm develop.zip \
+    && rm -rf parallel-develop \
+    && docker-php-ext-enable parallel \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # Zip extension
 ENV STEP="Zip extension"
 RUN (apt-get update \
     && apt-get -y install --no-install-recommends libzip-dev \
-    && pecl install zip \
-    && echo extension=zip.so > /usr/local/etc/php/conf.d/zip.ini \
-    && echo "$SUCCESS $STEP" >> $LOG_FILE) || echo "$FAILURE $STEP" >> $LOG_FILE
+    && docker-php-ext-install zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "$SUCCESS $STEP" >> $LOG_FILE) || (echo "$FAILURE $STEP" >> $LOG_FILE && false)
 
 # Composer
 ENV STEP="Composer"
@@ -95,6 +94,10 @@ RUN (curl -sSL https://getcomposer.org/installer | php \
 USER $USERNAME
 
 # NVM
+ENV NVM_DIR=/home/$USERNAME/.nvm
+ENV BASH_ENV=/home/$USERNAME/.bash_env
+RUN touch "${BASH_ENV}" && echo '. "${BASH_ENV}"' >> ~/.bashrc
+
 ENV STEP="NVM and Node.js"
 SHELL ["/bin/bash", "-c"]
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \

@@ -8,8 +8,7 @@
 PACKAGE=""
 VERSION=""
 ALL_ARCH="false"
-ROCKER=${ROCKER:-localhost:5000}
-
+ROCKER=${ROCKER:-localhost:5100}
 
 # Parse named arguments
 for arg in "$@"; do
@@ -34,13 +33,14 @@ for arg in "$@"; do
             echo "Usage: $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --package=PACKAGE      Package to build (apache, fpm, zts)"
-            echo "  --version=VERSION      PHP version (e.g., 8.5.0)"
+            echo "  --package=PACKAGE     Package to build (apache, fpm, zts)"
+            echo "  --version=VERSION     PHP version (e.g., 8.5.0)"
             echo "  --full                Build for all architectures and push"
+            echo "  --prepare             Prepare build environment"
             echo "  --help, -h            Show this help message"
             echo ""
             echo "Environment variables:"
-            echo "  ROCKER                Local registry URL (default: localhost:5000)"
+            echo "  ROCKER                Local registry URL (default: localhost:5100)"
             echo ""
             echo "Examples:"
             echo "  $0 --package=apache --version=8.5.0"
@@ -73,7 +73,6 @@ if [ "$ALL_ARCH" == "true" ]; then
     PUSH="--push"
 fi
 
-
 # Check if local registry is available
 echo ""
 echo "🔍 Checking local registry availability..."
@@ -97,8 +96,21 @@ else
 fi
 
 if [ "$ALL_ARCH" == "true" ]; then
-    ARCH="linux/amd64,linux/arm64/v8"
+    PLATFORM="linux/amd64,linux/arm64/v8"
 else
+    # Convert architecture to Docker platform format
+    case "$ARCH" in
+        x86_64|amd64)
+            PLATFORM="linux/amd64"
+            ;;
+        arm64|aarch64)
+            PLATFORM="linux/arm64/v8"
+            ;;
+        *)
+            echo "❌ Unsupported architecture: $ARCH"
+            exit 1
+            ;;
+    esac
     TAG="${TAG}-${ARCH}"
 fi
 
@@ -108,17 +120,20 @@ if [ "$PREPARE" == "true" ]; then
     docker buildx inspect --bootstrap
     echo "✅ Build environment prepared."
     exit 0
-}
+fi
 
-echo "🚀 Building ${PACKAGE} version ${VERSION} for architecture ${ARCH} with tag ${TAG}"
+echo "🚀 Building ${PACKAGE} version ${VERSION} for platform ${PLATFORM} with tag ${TAG}"
 
 # Get script directory and navigate to php folder
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PHP_DIR="${SCRIPT_DIR}/../php"
 
 set -e
-docker buildx build --platform ${ARCH} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
-
+# Use desktop-linux context on macOS, keep current context on Linux/WSL
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    docker buildx use desktop-linux
+fi
+docker buildx build --no-cache --platform ${PLATFORM} ${PHP_DIR}/${PACKAGE} --build-arg VERSION=${VERSION} -t ${TAG} ${PUSH}
 
 SUMMARY_FILE="./var/log/build-summary-${PACKAGE}-${VERSION}.md"
 # Create or clear summary file
@@ -135,22 +150,23 @@ fi
 echo "" >> "${SUMMARY_FILE}"
     
 # Add PHP extensions
-cat >> "${SUMMARY_FILE}" << 'PKGEOF'
+cat >> "${SUMMARY_FILE}" << 'EOF'
 
 <details>
 <summary>📦 Installed PHP Extensions</summary>
 
 ```
-PKGEOF
-            docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not available" >> "${SUMMARY_FILE}"
-            cat >> "${SUMMARY_FILE}" << 'PKGEOF'
+EOF
+docker run --rm ${TAG} php -m 2>/dev/null >> "${SUMMARY_FILE}" || echo "Not available" >> "${SUMMARY_FILE}"
+cat >> "${SUMMARY_FILE}" << 'EOF'
 ```
 
 </details>
 
 ---
 
-PKGEOF
+EOF
 
 echo "✅ Build completed: ${TAG}"
 echo ""
+
