@@ -1,0 +1,148 @@
+# GitLab CI/CD Configuration
+# Builds Docker image with prod profile on develop branch
+
+stages:
+  - build
+  - deploy
+
+variables:
+  # Docker Compose version
+  DOCKER_COMPOSE_VERSION: "2.23.0"
+  # Docker image
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# Docker template
+.docker-base:
+  image: docker:24-git
+  services:
+    - docker:24-dind
+  before_script:
+    # Install Docker Compose
+    - apk add --no-cache curl
+    - curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    - chmod +x /usr/local/bin/docker-compose
+    - docker-compose --version
+    - docker info
+
+# ============================================================================
+# STAGE: BUILD
+# ============================================================================
+
+# Build Docker image with prod profile when develop is updated
+build:docker-prod:
+  extends: .docker-base
+  stage: build
+  script:
+    - echo "🔨 Building and starting Docker image with prod profile..."
+    - docker compose --profile prod up --build -d
+    - echo "✅ Image built and container started successfully"
+    - docker images | grep cpascher
+    - docker ps | grep cpascher
+  only:
+    - develop
+  tags:
+    - docker
+
+# Automatic build after validated merge request
+build:on-merge:
+  extends: .docker-base
+  stage: build
+  script:
+    - echo "🔀 Build after validated merge request..."
+    - echo "🔨 Building and starting Docker image with prod profile..."
+    - docker compose --profile prod up --build -d
+    - echo "✅ Image built and container started successfully"
+    - docker images | grep cpascher
+    - docker ps | grep cpascher
+  only:
+    - merge_requests
+  when: on_success
+  tags:
+    - docker
+
+# Build for other branches (optional - dev profile)
+build:docker-dev:
+  extends: .docker-base
+  stage: build
+  script:
+    - echo "🔨 Building and starting Docker image with dev profile..."
+    - docker compose --profile dev up --build -d
+    - echo "✅ Image built and container started successfully"
+    - docker images | grep cpascher
+    - docker ps | grep cpascher
+  only:
+    - /^feature\/.*/
+    - /^bugfix\/.*/
+  tags:
+    - docker
+  when: manual
+
+# Build for production (main/master)
+build:docker-production:
+  extends: .docker-base
+  stage: build
+  script:
+    - echo "🚀 Building and starting production Docker image..."
+    - docker compose --profile prod up --build -d
+    - echo "📦 Tagging image..."
+    - docker tag cpascher:prod cpascher:${CI_COMMIT_TAG:-latest}
+    - docker images | grep cpascher
+    - docker ps | grep cpascher
+  only:
+    - main
+    - tags
+  tags:
+    - docker
+
+# ============================================================================
+# STAGE: DEPLOY (optional)
+# ============================================================================
+
+# Automatic deployment on develop
+deploy:staging:
+  extends: .docker-base
+  stage: deploy
+  script:
+    - echo "🚀 Restarting in staging..."
+    - docker compose --profile prod restart
+    - echo "✅ Application restarted"
+  environment:
+    name: staging
+    url: http://localhost:8888
+  only:
+    - develop
+  tags:
+    - docker
+  when: manual
+
+# Production deployment
+deploy:production:
+  extends: .docker-base
+  stage: deploy
+  script:
+    - echo "🚀 Restarting in production..."
+    - docker compose --profile prod restart
+    - echo "✅ Application restarted in production"
+  environment:
+    name: production
+    url: $PRODUCTION_URL
+  only:
+    - main
+    - tags
+  tags:
+    - docker
+  when: manual
+
+# Cleanup old images (maintenance)
+cleanup:images:
+  extends: .docker-base
+  stage: deploy
+  script:
+    - echo "🧹 Cleaning unused images..."
+    - docker image prune -f
+    - docker system df
+  only:
+    - schedules
+  tags:
+    - docker
