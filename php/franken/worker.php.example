@@ -1,0 +1,48 @@
+<?php
+/**
+ * FrankenPHP Worker Example
+ * 
+ * Workers are long-running PHP processes that handle multiple requests
+ * without restarting, significantly improving performance.
+ * 
+ * @see https://frankenphp.dev/docs/workers/
+ */
+
+// Boot your application once
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Initialize your framework (Laravel, Symfony, etc.)
+// $app = require __DIR__ . '/bootstrap/app.php';
+
+$handler = function () {
+    // Your request handling logic
+    // This code runs for EACH request
+    
+    echo "Hello from FrankenPHP Worker!\n";
+    echo "Request: " . $_SERVER['REQUEST_URI'] . "\n";
+    echo "Method: " . $_SERVER['REQUEST_METHOD'] . "\n";
+    
+    // Example: JSON response
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'success',
+        'worker' => true,
+        'pid' => getmypid(),
+        'time' => date('Y-m-d H:i:s'),
+    ]);
+};
+
+// Start the worker loop
+// This is the FrankenPHP magic that keeps the process alive
+for ($nbRequests = 0, $running = true; $running; ++$nbRequests) {
+    // Mark the beginning of a new request
+    $running = \frankenphp_handle_request($handler);
+    
+    // Reset the state of global variables
+    // Important: Clean up any request-specific state here
+    
+    // Optional: Garbage collection
+    if ($nbRequests % 100 === 0) {
+        gc_collect_cycles();
+    }
+}

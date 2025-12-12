@@ -1,0 +1,36 @@
+{
+    # Global options
+    frankenphp {
+        num_threads {$FRANKENPHP_NUM_THREADS:2}
+    }
+    
+    # Uncomment to enable access logs
+    # log {
+    #     output stdout
+    #     format console
+    # }
+}
+
+# Default server
+:80 {
+    # Set the root directory
+    root * /app/public
+    
+    # Enable compression
+    encode zstd gzip
+    
+    # Enable PHP
+    php_server
+    
+    # Enable file serving
+    file_server
+    
+    # Handle PHP files
+    @phpFiles path *.php
+    handle @phpFiles {
+        php
+    }
+    
+    # Try files, fallback to index.php for Laravel/Symfony
+    try_files {path} {path}/ /index.php?{query}
+}

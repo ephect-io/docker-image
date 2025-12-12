@@ -1,0 +1,47 @@
+services:
+  frankenphp:
+    image: localhost:5100/dev-php:franken-8.5.0
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./:/app
+      # Optional: Custom Caddyfile
+      # - ./Caddyfile:/etc/caddy/Caddyfile
+    environment:
+      # FrankenPHP configuration
+      FRANKENPHP_NUM_THREADS: 4
+      
+      # Xdebug configuration
+      XDEBUG_MODE: debug
+      XDEBUG_CONFIG: client_host=host.docker.internal
+      
+      # PHP configuration
+      PHP_MEMORY_LIMIT: 256M
+    
+    # Optional: Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    
+    # For macOS/Windows: Enable host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+# Optional: Database service
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: myapp
+  #     POSTGRES_USER: myapp
+  #     POSTGRES_PASSWORD: secret
+  #   volumes:
+  #     - db_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   db_data:

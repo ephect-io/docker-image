@@ -1,0 +1,64 @@
+{
+    # Global options
+    frankenphp {
+        # Enable workers for maximum performance
+        # worker <script> <num>
+        worker /app/worker.php 4
+        
+        # Number of threads per worker
+        num_threads 2
+    }
+    
+    # Enable access logs
+    log {
+        output stdout
+        format console
+    }
+}
+
+# HTTP/HTTPS server
+{$SERVER_NAME:localhost} {
+    # Enable automatic HTTPS
+    # tls internal  # Uncomment for self-signed cert in development
+    
+    # Set the root directory
+    root * /app/public
+    
+    # Enable compression
+    encode zstd gzip
+    
+    # Security headers
+    header {
+        # HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        # Prevent MIME sniffing
+        X-Content-Type-Options "nosniff"
+        # XSS Protection
+        X-Frame-Options "SAMEORIGIN"
+        # Remove server header
+        -Server
+    }
+    
+    # Enable PHP with workers
+    php_server
+    
+    # Enable file serving
+    file_server
+    
+    # Handle index files
+    index index.php index.html
+    
+    # Try files, fallback to index.php (for Laravel, Symfony, etc.)
+    try_files {path} {path}/ /index.php?{query}
+    
+    # Specific route for workers demo
+    handle /worker {
+        rewrite * /worker.php
+        php
+    }
+    
+    # Logs
+    log {
+        output file /var/log/caddy/access.log
+    }
+}
