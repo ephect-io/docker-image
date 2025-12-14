@@ -1,0 +1,20 @@
+# Configuration sudo pour GitLab Runner
+# Fichier: /etc/sudoers.d/gitlab-runner
+
+# Permissions existantes
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/mkdir
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/chown
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/chmod
+
+# Permissions supplémentaires pour CI/CD
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/podman
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/rm
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/mv
+gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/cp
+
+# Alternative plus sécurisée (si préférée)
+# gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/podman stop *
+# gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/podman rm *
+# gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/podman ps *
+# gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/rm -rf /var/www/html/*
+# gitlab-runner ALL=(ALL) NOPASSWD: /usr/bin/mv * /var/www/html/*

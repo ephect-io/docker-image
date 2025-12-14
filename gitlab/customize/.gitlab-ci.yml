@@ -1,0 +1,179 @@
+# GitLab CI/CD Configuration - Version Modulaire
+# Utilise les templates du répertoire gitlab/templates/
+
+stages:
+  - build
+  - deploy
+
+variables:
+  # Version de Docker Compose
+  DOCKER_COMPOSE_VERSION: "2.23.0"
+  
+  # Configuration du projet - À MODIFIER pour adapter à un nouveau projet
+  PROJECT_NAME: "cpascher"
+  CONTAINER_NAME_PROD: "${PROJECT_NAME}-prod"
+  CONTAINER_NAME_DEV: "${PROJECT_NAME}-dev"
+  IMAGE_NAME: "${PROJECT_NAME}"
+  REGISTRY_URL: "localhost:5100"
+  
+  # Ports
+  DEV_PORT: "8888"
+  PROD_PORT: "8888"
+
+# ============================================================================
+# IMPORT DES TEMPLATES
+# ============================================================================
+
+include:
+  - local: 'gitlab/templates/build.yml'
+  - local: 'gitlab/templates/deploy.yml'
+
+# ============================================================================
+# STAGE: BUILD - Utilise les templates modulaires
+# ============================================================================
+
+# Build sur l'hôte avec profil dev
+build:host-dev:
+  extends: .build_template
+  stage: build
+  variables:
+    PROFILE: "dev"
+    CONTAINER_NAME: "${CONTAINER_NAME_DEV}"
+  only:
+    - develop
+  tags:
+    - local
+    - shell
+  when: manual
+
+# Build de l'image Docker avec profil prod + démarrage conteneur (develop)
+build:docker-prod:
+  extends: .build_and_deploy_template
+  stage: build
+  variables:
+    PROFILE: "prod"
+    CONTAINER_NAME: "${CONTAINER_NAME_PROD}"
+  only:
+    - develop
+  tags:
+    - shell
+    - local
+  when: manual
+
+# Build automatique après merge request validée
+build:on-merge:
+  extends: .build_and_deploy_template
+  stage: build
+  variables:
+    PROFILE: "prod"
+    CONTAINER_NAME: "${CONTAINER_NAME_PROD}"
+  only:
+    - merge_requests
+  when: on_success
+  tags:
+    - shell
+    - local
+
+# Build pour les autres branches (optionnel - profil dev)
+build:docker-dev:
+  extends: .build_and_deploy_template
+  stage: build
+  variables:
+    PROFILE: "dev"
+    CONTAINER_NAME: "${CONTAINER_NAME_DEV}"
+  only:
+    - /^feature\/.*/
+    - /^bugfix\/.*/
+  tags:
+    - shell
+    - local
+  when: manual
+
+# Build pour la production (main/master) + tags
+build:docker-production:
+  extends: .build_and_deploy_template
+  stage: build
+  variables:
+    PROFILE: "prod"
+    CONTAINER_NAME: "${CONTAINER_NAME_PROD}"
+  after_script:
+    - echo "📦 Tagging de l'image..."
+    - docker tag ${IMAGE_NAME}:prod ${IMAGE_NAME}:${CI_COMMIT_TAG:-latest}
+    - docker images | grep ${PROJECT_NAME}
+    - echo "📤 Push vers le registre avec tag..."
+    - docker tag ${IMAGE_NAME}:prod ${REGISTRY_URL}/${IMAGE_NAME}:${CI_COMMIT_TAG:-latest}
+    - docker push ${REGISTRY_URL}/${IMAGE_NAME}:${CI_COMMIT_TAG:-latest}
+    - echo "✅ Image poussée vers ${REGISTRY_URL}/${IMAGE_NAME}:${CI_COMMIT_TAG:-latest}"
+  only:
+    - main
+    - tags
+  tags:
+    - shell
+    - local
+
+# ============================================================================
+# STAGE: DEPLOY (optionnel)
+# ============================================================================
+
+# Déploiement automatique sur develop
+deploy:staging:
+
+  stage: deploy
+  script:
+    - echo "🚀 Redémarrage en staging..."
+    - docker compose --profile prod restart
+    - echo "✅ Application redémarrée"
+  environment:
+    name: staging
+    url: http://localhost:${PROD_PORT}
+  only:
+    - develop
+  tags:
+    - shell
+    - local
+  when: manual
+
+# Déploiement en production
+deploy:production:
+  stage: deploy
+  script:
+    - echo "🚀 Déploiement en production..."
+    - echo "=== Redémarrage du conteneur ==="
+    - docker compose --profile prod restart
+    - echo "=== Copie des fichiers depuis le conteneur (via tmp) ==="
+    - mkdir -p ~/tmp/${PROJECT_NAME}-backup
+    - docker cp ${CONTAINER_NAME_PROD}:/Sites/${PROJECT_NAME}/. ~/tmp/${PROJECT_NAME}-backup/
+    - echo "=== Déplacement vers /var/www/html/${PROJECT_NAME} ==="
+    - sudo rm -rf /var/www/html/${PROJECT_NAME}
+    - sudo mkdir -p /var/www/html/${PROJECT_NAME}
+    - sudo mv ~/tmp/${PROJECT_NAME}-backup/* /var/www/html/${PROJECT_NAME}/ 2>/dev/null || true
+    - sudo mv ~/tmp/${PROJECT_NAME}-backup/.* /var/www/html/${PROJECT_NAME}/ 2>/dev/null || true
+    - rm -rf ~/tmp/${PROJECT_NAME}-backup
+    - echo "=== Vérification des fichiers copiés ==="
+    - ls -la /var/www/html/${PROJECT_NAME}/ | head -20
+    - echo "✅ Application déployée en production dans /var/www/html/${PROJECT_NAME}"
+  environment:
+    name: production
+    url: $PRODUCTION_URL
+  only:
+    - main
+    - tags
+  tags:
+    - shell
+    - local
+  when: manual
+
+
+# Nettoyage des anciennes images (maintenance)
+cleanup:images:
+
+  stage: deploy
+  script:
+    - echo "🧹 Nettoyage des images non utilisées..."
+    - docker image prune -f
+    - docker system df
+  only:
+    - schedules
+  tags:
+    - shell
+    - local
