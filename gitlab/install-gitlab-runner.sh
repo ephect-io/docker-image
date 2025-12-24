@@ -44,13 +44,13 @@ fi
 
 print_info "OS détecté: $OS $VERSION"
 
-# Vérification Fedora
-if [ "$OS" != "fedora" ]; then
-    print_error "Ce script est conçu pour Fedora Server 43"
+# Vérification RHEL
+if [ "$OS" != "rhel" ]; then
+    print_error "Ce script est conçu pour RHEL 8/9/10. Votre OS: $OS"
     exit 1
 fi
 
-print_info "Installation pour Fedora Server..."
+print_info "Installation pour RHEL..."
 
 # Vérifier si GitLab Runner est déjà installé
 if command -v gitlab-runner &> /dev/null; then
@@ -119,13 +119,11 @@ gitlab-runner register \
     --non-interactive \
     --url "$GITLAB_URL" \
     --registration-token "$REGISTRATION_TOKEN" \
-    --executor "docker" \
-    --docker-image "docker:24-git" \
+    --executor "shell" \
     --description "$RUNNER_DESCRIPTION" \
     --tag-list "$RUNNER_TAGS" \
     --run-untagged="false" \
     --locked="false" \
-    --docker-privileged="true" \
     --docker-volumes "/run/podman/podman.sock:/var/run/docker.sock" \
     --docker-volumes "/cache" \
     --docker-host "unix:///run/podman/podman.sock"
